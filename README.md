@@ -19,7 +19,7 @@ Current primary use case:
 
 ## Screenshot
 
-Add a GUI screenshot here before public launch.
+![MediaSeg GUI](assets/screenshots/mediaseg-main-window.png)
 
 ---
 
