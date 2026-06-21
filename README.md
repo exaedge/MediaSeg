@@ -8,14 +8,18 @@ Default target chunk size: 200MB
 
 ## Overview
 
-MediaSeg is a local macOS utility for splitting large media files into smaller chunks that satisfy upload size limits.
+MediaSeg is a local macOS utility that splits large media files into upload-ready chunks while preserving quality.
 
 Current primary use case:
 
-- Prepare long-form media for AI-friendly ingestion
+- Prepare long-form media for NotebookLM and other size-limited upload workflows
 - Split large media files below a configurable size limit
 - Preserve original quality whenever possible
 - Work entirely on local files
+
+## Screenshot
+
+Add a GUI screenshot here before public launch.
 
 ---
 
@@ -233,6 +237,14 @@ Run:
 ```bash
 open dist/MediaSeg.app
 ```
+
+---
+
+## Third-Party Licenses
+
+MediaSeg uses FFmpeg / FFprobe, PySide6 / Qt, and Lucide Icons.
+
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ---
 
