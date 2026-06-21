@@ -1,4 +1,4 @@
-# MediaSeg v0.9.0 - Initial Public Release
+# MediaSeg v1.0.0 - Initial Public Release
 
 MediaSeg is a local macOS utility that splits large media files into upload-ready chunks while preserving quality.
 
