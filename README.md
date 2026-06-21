@@ -46,7 +46,7 @@ Current primary use case:
 
 For bug reports, feature requests, and other feedback, open a [GitHub Issue](issues).
 
-Please include the app version, macOS version, and any steps to reproduce.
+Please include the app version, macOS version, any steps to reproduce, and the Session Log if available.
 
 ---
 
