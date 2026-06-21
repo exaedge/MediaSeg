@@ -1,0 +1,30 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+.venv/
+venv/
+
+# Build outputs
+build/
+dist/
+*.spec.bak
+
+# Local archives and release artifacts
+*.zip
+*.dmg
+
+# macOS metadata
+.DS_Store
+
+# Internal handoff notes
+.codex/
+.handoff/
+
+# Generated app icon workspace
+assets/app_icon.iconset/
+assets/icon_source/
+assets/build/
+
+# Private reference materials
