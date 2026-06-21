@@ -25,11 +25,11 @@ Current primary use case:
   <tr>
     <td align="center">
       <img src="assets/screenshots/mediaseg-initial-state.png" alt="MediaSeg initial state" width="380"><br>
-      Initial state
+      Initial state: ready to drop a file
     </td>
     <td align="center">
       <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg output complete" width="380"><br>
-      Output complete
+      Output complete: chunks saved to a folder
     </td>
   </tr>
 </table>
