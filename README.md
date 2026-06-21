@@ -28,15 +28,25 @@ Current primary use case:
       Initial state
     </td>
     <td align="center">
-      <img src="assets/screenshots/mediaseg-main-window.png" alt="MediaSeg splitting state" width="380"><br>
+      <img src="assets/screenshots/mediaseg-splitting-state.png" alt="MediaSeg splitting state" width="380"><br>
       Splitting
     </td>
-    <td align="center">
-      <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg output complete" width="380"><br>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg output complete" width="760"><br>
       Output complete
     </td>
   </tr>
 </table>
+
+---
+
+## Feedback
+
+For bug reports, feature requests, and other feedback, open a [GitHub Issue](issues).
+
+Please include the app version, macOS version, and any steps to reproduce.
 
 ---
 
