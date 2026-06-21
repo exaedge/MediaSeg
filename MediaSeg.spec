@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
+import sys
+
+sys.path.insert(0, os.getcwd())
+from mediaseg_version import get_public_version
 
 
 a = Analysis(
@@ -88,6 +92,7 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='MediaSeg.app',
+    version=get_public_version(),
     icon='assets/app_icon.icns' if os.path.exists('assets/app_icon.icns') else None,
     bundle_identifier='com.jadore.mediaseg',
 )
