@@ -21,7 +21,18 @@ Current primary use case:
 
 ## Screenshot
 
-![MediaSeg GUI](assets/screenshots/mediaseg-main-window.png)
+<table>
+  <tr>
+    <td align="center">
+      <img src="assets/screenshots/mediaseg-initial-state.png" alt="MediaSeg initial state" width="380"><br>
+      Initial state
+    </td>
+    <td align="center">
+      <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg output complete" width="380"><br>
+      Output complete
+    </td>
+  </tr>
+</table>
 
 ---
 
