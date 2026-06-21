@@ -1,5 +1,7 @@
 # MediaSeg
 
+<img src="assets/app_icon.svg" alt="MediaSeg icon" width="72" align="right">
+
 Status: Stable
 
 Platform: macOS on Apple Silicon
