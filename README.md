@@ -8,6 +8,14 @@ Platform: macOS on Apple Silicon
 
 Default target chunk size: 200MB
 
+MediaSeg splits large media files into upload-ready chunks while preserving quality.
+
+It was produced and directed with full AI assistance, and shipped in 2 days from idea to public release.
+
+- [Project page](https://exaedge.ai/our-projects/media-split-tool-mediaseg/)
+- [Latest release](https://github.com/exaedge/MediaSeg/releases/latest)
+- [GitHub Issues](https://github.com/exaedge/MediaSeg/issues)
+
 ## Overview
 
 MediaSeg is a local macOS utility that splits large media files into upload-ready chunks while preserving quality.
@@ -19,7 +27,7 @@ Current primary use case:
 - Preserve original quality whenever possible
 - Work entirely on local files
 
-## Screenshot
+## Screenshots
 
 <table>
   <tr>
@@ -44,7 +52,7 @@ Current primary use case:
 
 ## Feedback
 
-For bug reports, feature requests, and other feedback, open a [GitHub Issue](issues).
+For bug reports, feature requests, and other feedback, open a [GitHub Issue](https://github.com/exaedge/MediaSeg/issues).
 
 Please include the app version, macOS version, any steps to reproduce, and the Session Log if available.
 
@@ -82,6 +90,12 @@ Implemented:
 - MP4 and WEBM support through local `ffmpeg` / `ffprobe`
 - Configurable chunk sizing with target-range optimization
 - macOS app packaging support with SVG icons and license handling
+
+## From direction to public release in 2 days
+
+MediaSeg was produced and directed with full AI assistance, and shipped in 2 days.
+
+The point is not that AI can do everything. The point is that strong direction and production can turn an idea into a practical product, fast.
 
 Example:
 
