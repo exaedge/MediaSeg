@@ -1061,9 +1061,9 @@ class MainWindow(QMainWindow):
         tools = ", ".join(missing_dependencies)
         return (
             f"Missing runtime dependency: {tools}.\n\n"
-            "MediaSeg requires system-installed ffmpeg and ffprobe.\n"
-            "Install them first, then restart the app.\n\n"
-            "Example on macOS with Homebrew:\n"
+            "Release builds include bundled ffmpeg and ffprobe.\n"
+            "If you are running MediaSeg from source, install ffmpeg first, then restart the app.\n\n"
+            "Example for source runs on macOS with Homebrew:\n"
             "brew install ffmpeg"
         )
 
@@ -1105,7 +1105,11 @@ class MainWindow(QMainWindow):
             },
             {
                 "title": "Runtime Requirement",
-                "body": "MediaSeg uses system-installed ffmpeg and ffprobe for media probing, conversion, and splitting.",
+                "body": "Release builds bundle FFmpeg and FFprobe. Source runs use local ffmpeg and ffprobe. Bundled FFmpeg is distributed under the LGPL v2.1.",
+            },
+            {
+                "title": "FFmpeg Source",
+                "body": "Matching FFmpeg source and build-configuration files are distributed alongside MediaSeg release artifacts.",
             },
             {
                 "title": "Developer",
@@ -1142,8 +1146,12 @@ class MainWindow(QMainWindow):
                 "body": "ffmpeg is an external video-processing tool. MediaSeg uses it to read, convert, and split media files.",
             },
             {
-                "title": "What is Homebrew?",
-                "body": "Homebrew is a common package manager for macOS. The command below installs ffmpeg on your Mac.",
+                "title": "Release builds",
+                "body": "MediaSeg release builds bundle ffmpeg and ffprobe. If those tools are missing in a release build, the app bundle is incomplete or damaged.",
+            },
+            {
+                "title": "Source runs with Homebrew",
+                "body": "If you are running MediaSeg from source, install ffmpeg with Homebrew.",
                 "command": "brew install ffmpeg",
             },
             {
@@ -1152,7 +1160,7 @@ class MainWindow(QMainWindow):
             },
             {
                 "title": "How to verify installation",
-                "body": "Open Terminal and check whether ffmpeg and ffprobe are available.",
+                "body": "Open Terminal and check whether ffmpeg and ffprobe are available for source runs.",
                 "command": "which ffmpeg && which ffprobe",
             },
         ]
@@ -1162,7 +1170,7 @@ class MainWindow(QMainWindow):
         sections = [
             {
                 "title": "If Start Splitting is disabled",
-                "body": "MediaSeg may not be able to find ffmpeg or ffprobe. Open Setup ffmpeg from the Help menu and complete the installation steps.",
+                "body": "MediaSeg may not be able to find bundled or local ffmpeg / ffprobe. In a release build, rebuild or re-copy the app bundle. In a source run, open Setup ffmpeg from the Help menu and complete the installation steps.",
             },
             {
                 "title": "If WEBM processing takes a long time",
@@ -1267,7 +1275,7 @@ class MainWindow(QMainWindow):
             if self.log_area is not None and current_missing != self._last_logged_missing_dependencies:
                 self.append_warning(
                     f"Missing dependency: {', '.join(self.missing_dependencies)} not available. "
-                    "Install ffmpeg and restart MediaSeg."
+                    "For source runs, install ffmpeg and restart MediaSeg."
                 )
                 self.append_info("")
                 self._last_logged_missing_dependencies = current_missing

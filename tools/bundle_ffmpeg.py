@@ -12,6 +12,7 @@ from pathlib import Path
 
 SYSTEM_PREFIXES = ("/System/Library/", "/usr/lib/")
 DEFAULT_FFMPEG_CELLAR = Path("/opt/homebrew/Cellar/ffmpeg/7.1.1_4")
+BUILD_INFO_FILENAME = "FFMPEG_BUILD_INFO.txt"
 
 
 def run(cmd: list[str]) -> str:
@@ -19,14 +20,59 @@ def run(cmd: list[str]) -> str:
     return result.stdout
 
 
-def parse_deps(binary_path: Path) -> list[str]:
+def parse_deps(binary_path: Path) -> list[Path]:
     output = run(["otool", "-L", str(binary_path)])
     deps = []
     for line in output.splitlines()[1:]:
         dep = line.strip().split(" ", 1)[0]
         if dep and not dep.startswith(SYSTEM_PREFIXES):
-            deps.append(dep)
+            deps.append(Path(dep))
     return deps
+
+
+def get_buildconf(binary_path: Path) -> str:
+    result = subprocess.run(
+        [str(binary_path), "-buildconf"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout
+
+
+def ensure_lgpl_compatible(binary_path: Path) -> None:
+    buildconf = get_buildconf(binary_path)
+    if "--enable-gpl" in buildconf or "--enable-nonfree" in buildconf:
+        raise RuntimeError(
+            f"{binary_path} is not LGPL-compatible for MediaSeg release bundling."
+        )
+
+
+def write_build_info(target_dir: Path, ffmpeg_path: Path, ffprobe_path: Path) -> None:
+    version_result = subprocess.run(
+        [str(ffmpeg_path), "-version"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    buildconf_text = get_buildconf(ffmpeg_path)
+    info_path = target_dir / BUILD_INFO_FILENAME
+    info_path.write_text(
+        "\n".join(
+            [
+                "MediaSeg bundled FFmpeg runtime",
+                "",
+                f"ffmpeg binary: {ffmpeg_path}",
+                f"ffprobe binary: {ffprobe_path}",
+                "",
+                version_result.stdout.strip(),
+                "",
+                buildconf_text.strip(),
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
 
 
 def resolve_source(path_str: str) -> Path:
@@ -49,14 +95,15 @@ def collect_dependency_closure(seed_paths: list[Path]) -> tuple[dict[Path, list[
 
         all_paths.add(current)
         try:
-            deps = [resolve_source(dep) for dep in parse_deps(current)]
+            deps = parse_deps(current)
         except subprocess.CalledProcessError:
             deps = []
 
         deps_map[current] = deps
         for dep in deps:
-            if dep not in all_paths and dep not in queue:
-                queue.append(dep)
+            dep_resolved = resolve_source(str(dep))
+            if dep_resolved not in all_paths and dep_resolved not in queue:
+                queue.append(dep_resolved)
 
     return deps_map, all_paths
 
@@ -80,20 +127,66 @@ def copy_bundle_files(source_paths: set[Path], destination_dir: Path) -> dict[Pa
     return copied
 
 
-def patch_bundle(copied_paths: dict[Path, Path], deps_map: dict[Path, list[Path]]) -> None:
-    copied_by_name = {src.name: dst for src, dst in copied_paths.items()}
+def collect_aliases(source_dir: Path, copied_paths: dict[Path, Path]) -> dict[Path, list[str]]:
+    aliases: dict[Path, list[str]] = {src: [] for src in copied_paths}
+    if not source_dir.exists():
+        return aliases
+
+    for entry in source_dir.iterdir():
+        if not entry.is_symlink():
+            continue
+        resolved = resolve_source(str(entry))
+        if resolved in aliases:
+            aliases[resolved].append(entry.name)
+
+    return aliases
+
+
+def preferred_install_name(src: Path, alias_names: list[str]) -> str:
+    if not alias_names:
+        return src.name
+
+    major_aliases = [name for name in alias_names if name.count(".") >= 2]
+    if major_aliases:
+        major_aliases.sort(key=len, reverse=True)
+        return major_aliases[0]
+
+    return alias_names[0]
+
+
+def create_alias_symlinks(
+    copied_paths: dict[Path, Path],
+    alias_map: dict[Path, list[str]],
+    destination_dir: Path,
+) -> None:
+    for src, dst in copied_paths.items():
+        for alias_name in alias_map.get(src, []):
+            alias_path = destination_dir / alias_name
+            if alias_path.exists() or alias_path.is_symlink():
+                alias_path.unlink()
+            alias_path.symlink_to(dst.name)
+
+
+def patch_bundle(
+    copied_paths: dict[Path, Path],
+    deps_map: dict[Path, list[Path]],
+    alias_map: dict[Path, list[str]],
+) -> None:
+    copied_by_resolved = {src: dst for src, dst in copied_paths.items()}
 
     for src, dst in copied_paths.items():
         if dst.suffix == ".dylib":
+            install_name = preferred_install_name(src, alias_map.get(src, []))
             subprocess.run(
-                ["install_name_tool", "-id", f"@loader_path/{dst.name}", str(dst)],
+                ["install_name_tool", "-id", f"@loader_path/{install_name}", str(dst)],
                 check=True,
             )
 
     for src, dst in copied_paths.items():
         deps = deps_map.get(src, [])
         for dep in deps:
-            dep_dst = copied_by_name.get(dep.name)
+            dep_resolved = resolve_source(str(dep))
+            dep_dst = copied_by_resolved.get(dep_resolved)
             if dep_dst is None:
                 continue
             subprocess.run(
@@ -101,7 +194,7 @@ def patch_bundle(copied_paths: dict[Path, Path], deps_map: dict[Path, list[Path]
                     "install_name_tool",
                     "-change",
                     str(dep),
-                    f"@loader_path/{dep_dst.name}",
+                    f"@loader_path/{dep.name}",
                     str(dst),
                 ],
                 check=True,
@@ -116,10 +209,15 @@ def bundle_ffmpeg(target_dir: Path, source_dir: Path = DEFAULT_FFMPEG_CELLAR) ->
     if not ffmpeg.exists() or not ffprobe.exists():
         raise FileNotFoundError(f"Expected ffmpeg tools under {source_bin_dir}")
 
+    ensure_lgpl_compatible(ffmpeg)
+
     seed_paths = [ffmpeg, ffprobe]
     deps_map, all_paths = collect_dependency_closure(seed_paths)
     copied = copy_bundle_files(all_paths, target_dir)
-    patch_bundle(copied, deps_map)
+    alias_map = collect_aliases(source_dir / "lib", copied)
+    create_alias_symlinks(copied, alias_map, target_dir)
+    patch_bundle(copied, deps_map, alias_map)
+    write_build_info(target_dir, ffmpeg, ffprobe)
 
 
 def main() -> int:

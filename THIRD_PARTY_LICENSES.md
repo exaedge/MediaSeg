@@ -36,9 +36,11 @@ Media inspection and media splitting operations.
 
 Notes:
 
-- The default build no longer bundles FFmpeg.
-- The app still expects `ffmpeg` and `ffprobe` to be available at runtime.
-- If you decide to bundle your own FFmpeg binary, make sure the binary's build configuration matches the licenses you intend to ship.
+- MediaSeg release builds bundle FFmpeg and FFprobe.
+- The bundled FFmpeg build must not include `--enable-gpl` or `--enable-nonfree`.
+- The bundled FFmpeg build is produced from official FFmpeg source with dynamic libraries enabled.
+- Matching FFmpeg source and build-configuration files are distributed alongside MediaSeg release artifacts.
+- Source runs of MediaSeg can still use local `ffmpeg` and `ffprobe` from `PATH`.
 
 ---
 

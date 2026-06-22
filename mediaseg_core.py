@@ -61,11 +61,11 @@ def check_dependencies():
     ffprobe_path = find_executable("ffprobe")
     if not ffmpeg_path:
         raise RuntimeError(
-            "Missing dependency: ffmpeg is not available. Install ffmpeg and restart MediaSeg."
+            "Missing dependency: ffmpeg is not available. Use a bundled MediaSeg release build or install ffmpeg and restart MediaSeg."
         )
     if not ffprobe_path:
         raise RuntimeError(
-            "Missing dependency: ffprobe is not available. Install ffmpeg/ffprobe and restart MediaSeg."
+            "Missing dependency: ffprobe is not available. Use a bundled MediaSeg release build or install ffmpeg/ffprobe and restart MediaSeg."
         )
     return ffmpeg_path, ffprobe_path
 
@@ -74,7 +74,7 @@ def get_duration(file_path, ffprobe_path=None):
         ffprobe_path = find_executable("ffprobe")
         if not ffprobe_path:
             raise RuntimeError(
-                "Missing dependency: ffprobe is not available. Install ffmpeg/ffprobe and restart MediaSeg."
+                "Missing dependency: ffprobe is not available. Use a bundled MediaSeg release build or install ffmpeg/ffprobe and restart MediaSeg."
             )
     cmd = [
         ffprobe_path, "-v", "error", "-show_entries", "format=duration",

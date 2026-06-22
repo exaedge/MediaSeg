@@ -176,7 +176,7 @@ source .venv/bin/activate
 pip install PySide6
 ```
 
-### Install ffmpeg
+### Install ffmpeg for source runs
 
 ```bash
 brew install ffmpeg
@@ -187,7 +187,9 @@ If you are not familiar with `brew`:
 - `ffmpeg` is the video tool MediaSeg uses for probing, conversion, and splitting.
 - `brew` is the package manager used to install it on macOS.
 - If Homebrew is missing, install it first, then run `brew install ffmpeg`.
-- Inside the app, `Help > Setup ffmpeg` explains the same steps.
+- Inside the app, `Help > Setup ffmpeg` explains the same steps for source runs.
+
+Packaged MediaSeg release builds bundle FFmpeg / FFprobe and do not rely on a system-installed copy.
 
 The GUI uses macOS VideoToolbox for WEBM-to-MP4 conversion, so that path no longer depends on `libx264`.
 
@@ -198,8 +200,7 @@ The GUI uses macOS VideoToolbox for WEBM-to-MP4 conversion, so that path no long
 - Apple Silicon Mac
 - macOS 15 Sequoia or later
 - Python 3.13+
-- ffmpeg
-- ffprobe
+- ffmpeg / ffprobe for source runs
 - PySide6 (GUI)
 
 ---
@@ -236,7 +237,8 @@ If `ffmpeg` or `ffprobe` is missing:
 
 - MediaSeg shows a dependency warning dialog at startup.
 - `Start Splitting` stays disabled until the dependency is available.
-- Use `Help > Setup ffmpeg` for installation guidance and verification commands.
+- Release builds should already include bundled FFmpeg / FFprobe.
+- Source runs can use `Help > Setup ffmpeg` for installation guidance and verification commands.
 
 ---
 
@@ -246,15 +248,17 @@ Use the table below to choose the build path:
 
 | Build type | Use case | Command | Output |
 | --- | --- | --- | --- |
-| Public | Direct distribution via GitHub or the corporate site | `./build_public.sh` | `dist/MediaSeg.app` |
-| Private | Handoff to a specific recipient | `./build_private.sh` | `dist/MediaSeg.app` + `dist/MediaSeg.dmg` |
+| Public | Direct distribution via GitHub or the corporate site | `./build_public.sh` | `dist/MediaSeg.app` + FFmpeg source archive + build configuration |
+| Private | Handoff to a specific recipient | `./build_private.sh` | `dist/MediaSeg.app` + `dist/MediaSeg.dmg` + FFmpeg source archive + build configuration |
 
 Notes:
 
 - Assets (SVG icons) are bundled through MediaSeg.spec.
 - Activity Indicator icons require the assets directory to be included in the build.
 - THIRD_PARTY_LICENSES.md should be distributed together with release builds.
-- The default build does not bundle FFmpeg. The target Mac must have `ffmpeg` and `ffprobe` available in `PATH`.
+- Both build scripts compile an LGPL-compatible FFmpeg / FFprobe bundle from official FFmpeg source and include it in the app.
+- Both build scripts also place a matching FFmpeg source archive and build-configuration text file in `dist/`.
+- The bundling step rejects FFmpeg builds that enable GPL or nonfree options.
 - The app includes `Help > Setup ffmpeg` and `Help > Common Issues` for dependency guidance.
 
 If you need to do the private build manually:
@@ -264,7 +268,7 @@ If you need to do the private build manually:
 codesign --force --deep --sign - dist/MediaSeg.app
 ```
 
-Then package `dist/MediaSeg.app` into a DMG.
+Then package `dist/MediaSeg.app` into a DMG and keep the matching FFmpeg source archive with the release payload.
 
 Current size notes:
 

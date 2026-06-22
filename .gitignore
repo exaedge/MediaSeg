@@ -9,6 +9,8 @@ venv/
 # Build outputs
 build/
 dist/
+.cache/
+ffbuild/
 *.spec.bak
 
 # Local archives and release artifacts
