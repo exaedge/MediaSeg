@@ -350,12 +350,6 @@ Currently out of scope:
 - Git integration
 - Media transcription
 
-## Future Considerations
-
-- EULA / end-user license terms if commercial distribution policy needs to be formalized later
-
----
-
 ## Development Principles
 
 - Local-first
