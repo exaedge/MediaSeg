@@ -230,7 +230,7 @@ Key features:
 - SVG icons throughout the UI
 - Output Folder selection
 - Collapsible SESSION LOG section, closed by default
-- Help menu with `How to Use`, `Setup ffmpeg`, `Common Issues`, and `About MediaSeg`
+- Help menu with `How to Use`, `Setup ffmpeg`, `Common Issues`, `Third-Party Licenses`, and `About MediaSeg`
 
 If `ffmpeg` or `ffprobe` is missing:
 
@@ -285,7 +285,7 @@ open dist/MediaSeg.app
 
 MediaSeg uses FFmpeg / FFprobe, PySide6 / Qt, and Lucide Icons.
 
-See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), which is also available from the app's Help menu in release builds.
 
 ---
 

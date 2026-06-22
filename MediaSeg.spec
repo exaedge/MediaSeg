@@ -6,11 +6,16 @@ sys.path.insert(0, os.getcwd())
 from mediaseg_version import get_public_version
 
 
+datas = [
+    ('assets', 'assets'),
+    ('THIRD_PARTY_LICENSES.md', '.'),
+]
+
 a = Analysis(
     ['mediaseg_gui.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets')],
+    datas=datas,
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

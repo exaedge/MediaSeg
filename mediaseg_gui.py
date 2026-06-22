@@ -157,6 +157,11 @@ def get_asset_path(*parts):
         return Path(sys._MEIPASS) / "assets" / Path(*parts)
     return Path(__file__).resolve().parent / "assets" / Path(*parts)
 
+def get_bundle_path(*parts):
+    if hasattr(sys, '_MEIPASS'):
+        return Path(sys._MEIPASS) / Path(*parts)
+    return Path(__file__).resolve().parent / Path(*parts)
+
 def get_asset_icon_path(icon_name):
     return get_asset_path("icons", icon_name)
 
@@ -872,6 +877,11 @@ class MainWindow(QMainWindow):
         common_issues_action.triggered.connect(self.show_common_issues_dialog)
         help_menu.addAction(common_issues_action)
 
+        third_party_action = QAction("Third-Party Licenses", self)
+        third_party_action.setMenuRole(QAction.MenuRole.NoRole)
+        third_party_action.triggered.connect(self.show_third_party_licenses_dialog)
+        help_menu.addAction(third_party_action)
+
         about_action = QAction("About MediaSeg", self)
         about_action.setMenuRole(QAction.MenuRole.AboutRole)
         about_action.triggered.connect(self.show_about_dialog)
@@ -1164,6 +1174,89 @@ class MainWindow(QMainWindow):
             },
         ]
         InfoDialog("Common Issues", "Common Issues", sections, self).exec()
+
+    def show_third_party_licenses_dialog(self):
+        license_path = get_bundle_path("THIRD_PARTY_LICENSES.md")
+        try:
+            license_text = license_path.read_text(encoding="utf-8")
+        except OSError:
+            license_text = "Third-party license information is not available in this build."
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Third-Party Licenses")
+        dialog.setModal(True)
+        dialog.setMinimumSize(720, 640)
+
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #171B22;
+            }
+            QLabel {
+                color: #E8EAF0;
+            }
+            QFrame#dialogPanel {
+                border: 1px solid #2B313B;
+                border-radius: 16px;
+                background-color: #171B22;
+            }
+            QPushButton#dialogPrimaryButton {
+                background-color: #1F64FF;
+                color: #FFFFFF;
+                border: none;
+                border-radius: 10px;
+                font-weight: bold;
+                padding: 8px 18px;
+                min-height: 38px;
+                max-height: 38px;
+            }
+            QPlainTextEdit#licenseText {
+                border: 1px solid #2B313B;
+                border-radius: 10px;
+                background-color: #141821;
+                color: #D7DCE6;
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+                font-size: 11px;
+                padding: 10px;
+            }
+        """)
+
+        root_layout = QVBoxLayout(dialog)
+        root_layout.setContentsMargins(16, 16, 16, 16)
+
+        panel = QFrame()
+        panel.setObjectName("dialogPanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(20, 20, 20, 20)
+        panel_layout.setSpacing(12)
+
+        title_label = QLabel("Third-Party Licenses")
+        title_label.setStyleSheet("font-size: 18px; font-weight: bold; color: #F3F5F8;")
+
+        body_label = QLabel("Bundled third-party license and attribution notes for this release.")
+        body_label.setWordWrap(True)
+        body_label.setStyleSheet("font-size: 13px; color: #A6B0BF; line-height: 1.4;")
+
+        license_view = QPlainTextEdit()
+        license_view.setObjectName("licenseText")
+        license_view.setReadOnly(True)
+        license_view.setPlainText(license_text)
+
+        button_row = QHBoxLayout()
+        button_row.addStretch()
+        close_button = QPushButton("Close")
+        close_button.setObjectName("dialogPrimaryButton")
+        close_button.clicked.connect(dialog.accept)
+        close_button.setDefault(True)
+        button_row.addWidget(close_button)
+
+        panel_layout.addWidget(title_label)
+        panel_layout.addWidget(body_label)
+        panel_layout.addWidget(license_view, 1)
+        panel_layout.addSpacing(8)
+        panel_layout.addLayout(button_row)
+
+        root_layout.addWidget(panel)
+        dialog.exec()
 
     def check_runtime_dependencies(self, show_dialog=False):
         self.missing_dependencies = self.detect_missing_dependencies()
