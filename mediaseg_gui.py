@@ -5,7 +5,7 @@ import math
 import time
 from pathlib import Path
 from mediaseg_version import get_public_version, get_build_version
-from PySide6.QtCore import QThread, Signal, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl
+from PySide6.QtCore import QEvent, QThread, Signal, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl
 from PySide6.QtGui import QAction, QDesktopServices, QIntValidator, QFontMetrics, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtSvgWidgets import QSvgWidget
@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QSizePolicy,
+    QStyle,
+    QStyleOptionSlider,
     QToolButton,
     QDialog
 )
@@ -46,6 +48,21 @@ def format_duration(seconds):
         return f"{hours:02d}:{minutes:02d}:{remaining_secs:02d}"
     except Exception:
         return "--:--:--"
+
+
+MIN_CHUNK_SIZE_MB = 10
+MIN_RELIABLE_CHUNK_SIZE_MB = 30
+MAX_SLIDER_CHUNK_SIZE_MB = 400
+MAX_MANUAL_CHUNK_SIZE_MB = 999
+SLIDER_TICK_LABEL_X_OFFSET = -6
+
+
+def get_estimated_chunk_factor(target_mb):
+    if target_mb >= 100:
+        return 0.98
+    if target_mb >= 50:
+        return 0.965
+    return 0.955
 
 def format_filename_middle_elide(filename, label):
     if not filename or label is None:
@@ -498,6 +515,70 @@ class ClickableSvgWidget(QSvgWidget):
             event.accept()
             return
         super().mousePressEvent(event)
+
+
+class SliderTicksWidget(QWidget):
+    def __init__(self, slider, tick_values, parent=None):
+        super().__init__(parent)
+        self.slider = slider
+        self.tick_values = tick_values
+        self.tick_labels = []
+        self.setMinimumHeight(18)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+        for value, text in tick_values:
+            label = QLabel(text, self)
+            label.setStyleSheet("color: #A6B0BF; font-size: 10px; font-weight: 500;")
+            label.adjustSize()
+            self.tick_labels.append((value, label))
+
+        self.slider.valueChanged.connect(self.update_tick_positions)
+        self.slider.rangeChanged.connect(self.update_tick_positions)
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.update_tick_positions()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.update_tick_positions()
+
+    def update_tick_positions(self):
+        if not self.slider:
+            return
+
+        option = QStyleOptionSlider()
+        self.slider.initStyleOption(option)
+        groove_rect = self.slider.style().subControlRect(
+            QStyle.CC_Slider,
+            option,
+            QStyle.SC_SliderGroove,
+            self.slider,
+        )
+        handle_rect = self.slider.style().subControlRect(
+            QStyle.CC_Slider,
+            option,
+            QStyle.SC_SliderHandle,
+            self.slider,
+        )
+
+        left = groove_rect.left() + (handle_rect.width() / 2.0)
+        right = groove_rect.right() - (handle_rect.width() / 2.0)
+        available = max(1.0, right - left)
+
+        slider_min = self.slider.minimum()
+        slider_max = self.slider.maximum()
+        value_span = max(1, slider_max - slider_min)
+
+        local_left = self.mapFromGlobal(self.slider.mapToGlobal(groove_rect.topLeft())).x()
+
+        for value, label in self.tick_labels:
+            ratio = (value - slider_min) / value_span
+            center_x = local_left + left + (available * ratio)
+            label.adjustSize()
+            label_x = int(round(center_x - (label.width() / 2.0) + SLIDER_TICK_LABEL_X_OFFSET))
+            label_x = max(0, min(label_x, max(0, self.width() - label.width())))
+            label.move(label_x, 0)
 
 
 class DependencyWarningDialog(QDialog):
@@ -1418,24 +1499,46 @@ class MainWindow(QMainWindow):
         
         self.size_edit = QLineEdit()
         self.size_edit.setObjectName("sizeEdit")
-        self.size_edit.setValidator(QIntValidator(10, 400, self))
+        self.size_edit.setValidator(QIntValidator(MIN_CHUNK_SIZE_MB, MAX_MANUAL_CHUNK_SIZE_MB, self))
         self.size_edit.setText("200")
         self.size_edit.setAlignment(Qt.AlignCenter)
         self.size_edit.setFixedWidth(80)
+        self.size_edit.installEventFilter(self)
         self.size_edit.textChanged.connect(self.on_lineedit_changed)
-        
+
         mb_label = QLabel("MB")
         mb_label.setStyleSheet("font-weight: bold; font-size: 12px; color: #A6B0BF;")
-        
+
+        size_input_row = QHBoxLayout()
+        size_input_row.setContentsMargins(0, 0, 0, 0)
+        size_input_row.setSpacing(6)
+        size_input_row.addStretch()
+        size_input_row.addWidget(self.size_edit)
+        size_input_row.addWidget(mb_label)
+
+        self.size_warning_icon = QLabel()
+        self.size_warning_icon.setPixmap(make_svg_icon("circle-alert.svg", color="#FF9A9A", size=14).pixmap(14, 14))
+        self.size_warning_text = QLabel("")
+        self.size_warning_text.setWordWrap(False)
+        self.size_warning_text.setStyleSheet("font-size: 10px; color: #FF9A9A;")
+
+        self.size_warning_row = QHBoxLayout()
+        self.size_warning_row.setContentsMargins(0, 0, 0, 0)
+        self.size_warning_row.setSpacing(6)
+        self.size_warning_row.addStretch()
+        self.size_warning_row.addWidget(self.size_warning_icon, alignment=Qt.AlignTop)
+        self.size_warning_row.addWidget(self.size_warning_text, 0, alignment=Qt.AlignRight | Qt.AlignTop)
+        self.update_size_warning(show_on_small_value=False)
+
         target_size_header.addWidget(target_size_lbl)
         target_size_header.addStretch()
-        target_size_header.addWidget(self.size_edit)
-        target_size_header.addWidget(mb_label)
+        target_size_header.addLayout(size_input_row)
         config_layout.addLayout(target_size_header)
+        config_layout.addLayout(self.size_warning_row)
 
-        # B. Chunk Size Slider (Range: 10 - 400)
+        # B. Chunk Size Slider (Range: 30 - 400)
         self.size_slider = QSlider(Qt.Horizontal)
-        self.size_slider.setRange(10, 400)
+        self.size_slider.setRange(MIN_RELIABLE_CHUNK_SIZE_MB, MAX_SLIDER_CHUNK_SIZE_MB)
         self.size_slider.setValue(200)
         self.size_slider.setSingleStep(10)
         self.size_slider.setPageStep(50)
@@ -1444,29 +1547,18 @@ class MainWindow(QMainWindow):
         self.size_slider.sliderReleased.connect(self.on_slider_released)
         config_layout.addWidget(self.size_slider)
 
-        # C. Slider Labels positioned to roughly follow the actual value spacing.
-        ticks_layout = QHBoxLayout()
-        ticks_layout.setContentsMargins(10, 0, 10, 0)
-        ticks_layout.setSpacing(0)
-        lbl1 = QLabel("10MB")
-        lbl2 = QLabel("100MB")
-        lbl3 = QLabel("200MB")
-        lbl4 = QLabel("300MB")
-        lbl5 = QLabel("400MB")
-        for lbl in [lbl1, lbl2, lbl3, lbl4, lbl5]:
-            lbl.setStyleSheet("color: #A6B0BF; font-size: 10px; font-weight: 500;")
-            lbl.setAlignment(Qt.AlignCenter)
-
-        ticks_layout.addWidget(lbl1)
-        ticks_layout.addStretch(90)
-        ticks_layout.addWidget(lbl2)
-        ticks_layout.addStretch(100)
-        ticks_layout.addWidget(lbl3)
-        ticks_layout.addStretch(100)
-        ticks_layout.addWidget(lbl4)
-        ticks_layout.addStretch(100)
-        ticks_layout.addWidget(lbl5)
-        config_layout.addLayout(ticks_layout)
+        # C. Slider tick labels follow the slider's actual rendered track positions.
+        self.size_slider_ticks = SliderTicksWidget(
+            self.size_slider,
+            [
+                (30, "30MB"),
+                (100, "100MB"),
+                (200, "200MB"),
+                (300, "300MB"),
+                (400, "400MB"),
+            ],
+        )
+        config_layout.addWidget(self.size_slider_ticks)
 
         divider_config = QFrame()
         divider_config.setFrameShape(QFrame.HLine)
@@ -1690,6 +1782,48 @@ class MainWindow(QMainWindow):
             self.duration_worker.deleteLater()
             self.duration_worker = None
 
+    def eventFilter(self, watched, event):
+        if watched is self.size_edit and event.type() == QEvent.FocusOut:
+            self.normalize_size_input()
+            self.update_size_warning(show_on_small_value=True)
+        return super().eventFilter(watched, event)
+
+    def normalize_size_input(self):
+        text = self.size_edit.text().strip()
+        if not text:
+            normalized = "200"
+        else:
+            try:
+                value = int(text)
+            except ValueError:
+                value = 200
+            value = max(MIN_CHUNK_SIZE_MB, min(value, MAX_MANUAL_CHUNK_SIZE_MB))
+            normalized = str(value)
+
+        if self.size_edit.text() != normalized:
+            self.size_edit.blockSignals(True)
+            self.size_edit.setText(normalized)
+            self.size_edit.blockSignals(False)
+            self.on_lineedit_changed(normalized)
+
+    def update_size_warning(self, show_on_small_value=False):
+        warning_text = ""
+
+        try:
+            target_mb = int(self.size_edit.text())
+        except ValueError:
+            target_mb = None
+
+        if (
+            show_on_small_value
+            and target_mb is not None
+            and MIN_CHUNK_SIZE_MB <= target_mb < MIN_RELIABLE_CHUNK_SIZE_MB
+        ):
+            warning_text = f"Below {MIN_RELIABLE_CHUNK_SIZE_MB} MB, some media files may fail."
+
+        self.size_warning_icon.setVisible(bool(warning_text))
+        self.size_warning_text.setText(warning_text)
+
     def update_estimated_chunks(self):
         if not self.current_file_size_bytes:
             self.file_info_card.chunks_val.setText("--")
@@ -1705,8 +1839,12 @@ class MainWindow(QMainWindow):
             
         MB_BASE = 1000 * 1000  # constant from core
         size_mb = self.current_file_size_bytes / MB_BASE
-        
-        chunks = int(math.ceil(size_mb / target_mb))
+
+        effective_target_mb = target_mb * get_estimated_chunk_factor(target_mb)
+        if effective_target_mb <= 0:
+            effective_target_mb = target_mb
+
+        chunks = int(math.ceil(size_mb / effective_target_mb))
         if chunks <= 0:
             chunks = 1
         self.file_info_card.chunks_val.setText(f"~{chunks} Parts")
@@ -1714,8 +1852,8 @@ class MainWindow(QMainWindow):
     @Slot(int)
     def on_slider_value_changed(self, value):
         snapped = (value // 10) * 10
-        if snapped < 10:
-            snapped = 10
+        if snapped < MIN_RELIABLE_CHUNK_SIZE_MB:
+            snapped = MIN_RELIABLE_CHUNK_SIZE_MB
         
         self.size_slider.blockSignals(True)
         self.size_slider.setValue(snapped)
@@ -1726,6 +1864,7 @@ class MainWindow(QMainWindow):
         self.size_edit.blockSignals(False)
 
         # Refresh immediately so wheel changes and drag changes stay in sync.
+        self.update_size_warning(show_on_small_value=False)
         self.update_estimated_chunks()
 
     @Slot()
@@ -1735,15 +1874,17 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def on_lineedit_changed(self, text):
         if not text:
+            self.update_size_warning(show_on_small_value=False)
             return
         try:
             value = int(text)
-            if 10 <= value <= 400:
-                slider_val = min(value, 400)
+            if MIN_CHUNK_SIZE_MB <= value <= MAX_MANUAL_CHUNK_SIZE_MB:
+                slider_val = min(max(value, MIN_RELIABLE_CHUNK_SIZE_MB), MAX_SLIDER_CHUNK_SIZE_MB)
                 self.size_slider.blockSignals(True)
                 self.size_slider.setValue(slider_val)
                 self.size_slider.blockSignals(False)
                 
+                self.update_size_warning(show_on_small_value=not self.size_edit.hasFocus())
                 self.update_estimated_chunks()
         except ValueError:
             pass
@@ -1764,7 +1905,9 @@ class MainWindow(QMainWindow):
             max_size_mb = 200
 
         if max_size_mb <= 0:
-            self.append_error("Invalid chunk size. Enter a value between 10 MB and 400 MB.")
+            self.append_error(
+                f"Invalid chunk size. Enter a value between {MIN_CHUNK_SIZE_MB} MB and {MAX_MANUAL_CHUNK_SIZE_MB} MB."
+            )
             return
 
         self.processing_active = True
