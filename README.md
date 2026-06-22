@@ -8,7 +8,7 @@ Platform: macOS on Apple Silicon
 
 Default target chunk size: 200MB
 
-MediaSeg splits large media files into upload-ready chunks while preserving quality.
+MediaSeg splits large media files into upload-ready chunks with local processing and a no-re-encode split path for MP4 input.
 
 It was produced and directed with full AI assistance, and shipped in 2 days from idea to public release.
 
@@ -18,12 +18,13 @@ It was produced and directed with full AI assistance, and shipped in 2 days from
 
 ## Overview
 
-MediaSeg is a local macOS utility that splits large media files into upload-ready chunks while preserving quality.
+MediaSeg is a local macOS utility that splits large media files into upload-ready chunks with local processing and a no-re-encode split path for MP4 input.
 
 Current primary use case:
 
 - Prepare long-form media for NotebookLM and other size-limited upload workflows
 - Split large media files below a configurable size limit
+- Keep MP4 splits on a stream copy path without re-encoding
 - Preserve original quality whenever possible
 - Work entirely on local files
 
@@ -88,6 +89,8 @@ Implemented:
 - Local-first splitter core and CLI entry point
 - PySide6 GUI with drag & drop, output folder selection, session log, and processing states
 - MP4 and WEBM support through local `ffmpeg` / `ffprobe`
+- MP4 split path uses ffmpeg stream copy (`-c copy`) without re-encoding
+- WEBM input is converted to MP4 first, then split locally
 - Configurable chunk sizing with target-range optimization
 - macOS app packaging support with SVG icons and license handling
 
@@ -121,7 +124,9 @@ Supported:
 Notes on WEBM:
 
 - WEBM files are converted before splitting.
-- The conversion step uses local ffmpeg and preserves media quality as much as possible.
+- The conversion step uses local ffmpeg to create an MP4 intermediate before splitting.
+- After conversion, the split step still uses stream copy rather than re-encoding.
+- The conversion step preserves media quality as much as possible, but it is not the same as the MP4 no-re-encode path.
 - Conversion can take significantly longer than MP4 processing.
 - CPU usage may be substantially higher during WEBM conversion.
 - Large WEBM recordings may require several minutes before splitting begins.
@@ -138,6 +143,7 @@ Planned:
 Output files should:
 
 - Preserve original quality whenever possible
+- Keep MP4 splits on a no-re-encode stream copy path
 - Stay below a configurable size limit
 - Attempt to keep chunk sizes within 90%-98% of the configured limit
 - Use the configured limit as a hard upper bound
@@ -319,12 +325,15 @@ Goals:
 
 - Stay below the configured maximum size
 - Prefer chunk sizes close to the target
-- Preserve original media quality with ffmpeg stream copy mode (`-c copy`)
+- Preserve original media quality with ffmpeg stream copy mode (`-c copy`) for the split step
 - Use macOS VideoToolbox for WEBM conversion
 
 Notes:
 
 - Default size input is 200MB.
+- MP4 input stays on a local stream copy split path and is not re-encoded during splitting.
+- WEBM input is converted to MP4 first, then split locally.
+- MediaSeg is not a frame-accurate editor or keyframe-aware finishing tool.
 - Very variable bitrate media may produce smaller final chunks.
 - MediaSeg prefers the best valid chunk below the limit over failure.
 
@@ -336,9 +345,14 @@ Currently out of scope:
 
 - Cloud processing
 - Video editing
+- Frame-accurate editing or keyframe-aware finishing workflows
 - Video compression optimization
 - Git integration
 - Media transcription
+
+## Future Considerations
+
+- EULA / end-user license terms if commercial distribution policy needs to be formalized later
 
 ---
 
