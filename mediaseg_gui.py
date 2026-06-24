@@ -55,6 +55,22 @@ MIN_RELIABLE_CHUNK_SIZE_MB = 30
 MAX_SLIDER_CHUNK_SIZE_MB = 400
 MAX_MANUAL_CHUNK_SIZE_MB = 999
 SLIDER_TICK_LABEL_X_OFFSET = -6
+OFFICIALLY_SUPPORTED_EXTENSIONS = (".mp4", ".webm", ".mov")
+EXPERIMENTAL_SUPPORTED_EXTENSIONS = (".m4a", ".mp3", ".wav")
+GUI_ACCEPTED_EXTENSIONS = OFFICIALLY_SUPPORTED_EXTENSIONS + EXPERIMENTAL_SUPPORTED_EXTENSIONS
+
+
+def is_gui_supported_extension(file_path):
+    return os.path.splitext(file_path)[1].lower() in GUI_ACCEPTED_EXTENSIONS
+
+
+def supported_format_summary():
+    return "Official: MP4, WEBM, MOV | Experimental: M4A, MP3, WAV"
+
+
+def supported_file_dialog_filter():
+    patterns = " ".join(f"*{ext}" for ext in GUI_ACCEPTED_EXTENSIONS)
+    return f"Supported Media Files ({patterns});;All Files (*)"
 
 
 def get_estimated_chunk_factor(target_mb):
@@ -266,7 +282,7 @@ class DropArea(QFrame):
         self.text_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.text_label)
         
-        self.subtext_label = QLabel("Supports MP4, WEBM")
+        self.subtext_label = QLabel(supported_format_summary())
         self.subtext_label.setStyleSheet("font-size: 11px; color: #A6B0BF;")
         self.subtext_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.subtext_label)
@@ -277,8 +293,7 @@ class DropArea(QFrame):
             if len(urls) == 1:
                 local_path = urls[0].toLocalFile()
                 if os.path.isfile(local_path):
-                    ext = os.path.splitext(local_path)[1].lower()
-                    if ext in [".mp4", ".webm"]:
+                    if is_gui_supported_extension(local_path):
                         self.setStyleSheet("""
                             #DropArea {
                                 border: 2px dashed #7DA2FF;
@@ -313,8 +328,7 @@ class DropArea(QFrame):
             if len(urls) == 1:
                 local_path = urls[0].toLocalFile()
                 if os.path.isfile(local_path):
-                    ext = os.path.splitext(local_path)[1].lower()
-                    if ext in [".mp4", ".webm"]:
+                    if is_gui_supported_extension(local_path):
                         self.fileDropped.emit(local_path)
                         event.acceptProposedAction()
                         return
@@ -1182,7 +1196,7 @@ class MainWindow(QMainWindow):
             },
             {
                 "title": "Supported Formats",
-                "body": "Current primary support is MP4 and WEBM. WEBM files are converted before splitting.",
+                "body": "Official GUI support is MP4, WEBM, and MOV. Experimental GUI support is M4A, MP3, and WAV. WEBM files are converted before splitting.",
             },
             {
                 "title": "Runtime Requirement",
@@ -1203,7 +1217,7 @@ class MainWindow(QMainWindow):
         sections = [
             {
                 "title": "1. Select a video file",
-                "body": "Drag and drop an MP4 or WEBM file, or click Browse to choose a file manually.",
+                "body": "Drag and drop a supported file, or click Browse to choose one manually. Official GUI support is MP4, WEBM, and MOV. Experimental GUI support is M4A, MP3, and WAV.",
             },
             {
                 "title": "2. Choose target chunk size",
@@ -1694,9 +1708,9 @@ class MainWindow(QMainWindow):
         default_dir = os.path.expanduser("~/Downloads")
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "Select Video File",
+            "Select Media File",
             default_dir,
-            "Video Files (*.mp4 *.webm);;All Files (*)"
+            supported_file_dialog_filter()
         )
         if file_path:
             self.on_file_selected(file_path)
@@ -1996,8 +2010,7 @@ class MainWindow(QMainWindow):
             if len(urls) == 1:
                 local_path = urls[0].toLocalFile()
                 if os.path.isfile(local_path):
-                    ext = os.path.splitext(local_path)[1].lower()
-                    if ext in [".mp4", ".webm"]:
+                    if is_gui_supported_extension(local_path):
                         event.acceptProposedAction()
                         return
         event.ignore()
@@ -2008,8 +2021,7 @@ class MainWindow(QMainWindow):
             if len(urls) == 1:
                 local_path = urls[0].toLocalFile()
                 if os.path.isfile(local_path):
-                    ext = os.path.splitext(local_path)[1].lower()
-                    if ext in [".mp4", ".webm"]:
+                    if is_gui_supported_extension(local_path):
                         self.on_file_selected(local_path)
                         event.acceptProposedAction()
                         return

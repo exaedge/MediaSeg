@@ -114,6 +114,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
 
     ext = input_file_path.suffix.lower()
     is_webm = ext == ".webm"
+    output_ext = ".mov" if ext == ".mov" and not is_webm else ".mp4"
 
     target_file_path = input_file_path
     temp_converted_path = None
@@ -253,11 +254,11 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
 
             # Adjust/extract iteratively to fit target range (90%-98%)
             adjustment_count = 0
-            best_path = outdir_path / f"_best_{n:03d}.mp4"
+            best_path = outdir_path / f"_best_{n:03d}{output_ext}"
             best_bytes = 0
             best_mb = 0.0
             best_distance = None
-            out_path = outdir_path / f"{safe_base_filename}_{n:03d}.mp4"
+            out_path = outdir_path / f"{safe_base_filename}_{n:03d}{output_ext}"
 
             while True:
                 adjustment_count += 1
@@ -382,7 +383,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                 temp_converted_path.unlink()
             except OSError:
                 pass
-        for pattern in ("_tmp_*.mp4", "_best_*.mp4", "_merge_*.mp4"):
+        for pattern in ("_tmp_*.mp4", "_best_*", "_merge_*"):
             for f in outdir_path.glob(pattern):
                 try:
                     f.unlink()
