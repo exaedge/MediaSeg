@@ -12,6 +12,7 @@ TARGET_MIN_UTILIZATION = 0.90
 TARGET_MAX_UTILIZATION = 0.98
 MAX_ADJUSTMENTS = 8
 DURATION_EPSILON_SEC = 0.01
+MIN_LAST_CHUNK_DURATION_SEC = 1.0
 
 def get_runtime_search_roots():
     roots = []
@@ -173,10 +174,77 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
         target_max_bytes = max_size_bytes * TARGET_MAX_UTILIZATION
         n = 1
         current_start_time = 0.0
+        previous_chunk_path = None
+        previous_chunk_start_time = 0.0
+
+        def extract_chunk(start_time, duration_sec, destination):
+            cmd_extract = [
+                ffmpeg_path, "-hide_banner", "-y",
+                "-ss", f"{start_time:.3f}",
+                "-i", str(target_file_path),
+                "-t", str(duration_sec),
+                "-map", "0", "-c", "copy",
+                "-reset_timestamps", "1", "-avoid_negative_ts", "make_zero",
+                str(destination)
+            ]
+
+            result = subprocess.run(cmd_extract, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if result.returncode != 0:
+                raise RuntimeError(f"Chunk extraction failed: {destination.name}")
+
+            if destination.exists():
+                out_bytes = destination.stat().st_size
+                out_mb = out_bytes / MB_BASE
+            else:
+                out_bytes = 0
+                out_mb = 0
+
+            if out_bytes > 0:
+                try:
+                    out_duration = get_duration(destination, ffprobe_path)
+                except Exception:
+                    out_duration = 0.0
+                if out_duration <= DURATION_EPSILON_SEC:
+                    destination.unlink(missing_ok=True)
+                    out_bytes = 0
+                    out_mb = 0
+            else:
+                out_duration = 0.0
+
+            return out_bytes, out_mb, out_duration
+
+        def merge_tail_into_previous(chunk_start_time, chunk_duration):
+            if previous_chunk_path is None:
+                return False
+
+            merged_duration = (chunk_start_time + chunk_duration) - previous_chunk_start_time
+            merge_path = outdir_path / f"_merge_{previous_chunk_path.name}"
+            merged_bytes, _, merged_actual_dur = extract_chunk(
+                previous_chunk_start_time,
+                merged_duration,
+                merge_path,
+            )
+            if 0 < merged_bytes <= max_size_bytes and merged_actual_dur > DURATION_EPSILON_SEC:
+                shutil.move(str(merge_path), str(previous_chunk_path))
+                logger(
+                    f"Merged tiny tail into previous chunk "
+                    f"({chunk_duration:.3f}s)  -> {previous_chunk_path.name}"
+                )
+                return True
+
+            merge_path.unlink(missing_ok=True)
+            return False
 
         while current_start_time < dur_total:
             remaining_duration = dur_total - current_start_time
             if remaining_duration <= DURATION_EPSILON_SEC:
+                break
+            if (
+                previous_chunk_path is not None
+                and remaining_duration <= MIN_LAST_CHUNK_DURATION_SEC
+                and merge_tail_into_previous(current_start_time, remaining_duration)
+            ):
+                current_start_time = dur_total
                 break
 
             cand_dur_int = int(round(min(seg_time, remaining_duration)))
@@ -215,39 +283,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                         break
 
                 is_last_chunk = (current_start_time + cand_dur_int >= dur_total)
-
-                cmd_extract = [
-                    ffmpeg_path, "-hide_banner", "-y",
-                    "-ss", f"{current_start_time:.3f}",
-                    "-i", str(target_file_path),
-                    "-t", str(cand_dur_int),
-                    "-map", "0", "-c", "copy",
-                    "-reset_timestamps", "1", "-avoid_negative_ts", "make_zero",
-                    str(out_path)
-                ]
-
-                result = subprocess.run(cmd_extract, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                if result.returncode != 0:
-                    raise RuntimeError(f"Chunk extraction failed: {out_path.name}")
-
-                if out_path.exists():
-                    out_bytes = out_path.stat().st_size
-                    out_mb = out_bytes / MB_BASE
-                else:
-                    out_bytes = 0
-                    out_mb = 0
-
-                if out_bytes > 0:
-                    try:
-                        out_duration = get_duration(out_path, ffprobe_path)
-                    except Exception:
-                        out_duration = 0.0
-                    if out_duration <= DURATION_EPSILON_SEC:
-                        out_path.unlink(missing_ok=True)
-                        out_bytes = 0
-                        out_mb = 0
-                else:
-                    out_duration = 0.0
+                out_bytes, out_mb, out_duration = extract_chunk(current_start_time, cand_dur_int, out_path)
 
                 if 0 < out_bytes <= max_size_bytes:
                     distance = abs(target_max_bytes - out_bytes)
@@ -323,6 +359,17 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                 if actual_dur <= DURATION_EPSILON_SEC:
                     out_path.unlink(missing_ok=True)
                     break
+                if (
+                    previous_chunk_path is not None
+                    and current_start_time + actual_dur >= dur_total - DURATION_EPSILON_SEC
+                    and actual_dur <= MIN_LAST_CHUNK_DURATION_SEC
+                ):
+                    if merge_tail_into_previous(current_start_time, actual_dur):
+                        out_path.unlink(missing_ok=True)
+                        current_start_time = dur_total
+                        break
+                previous_chunk_path = out_path
+                previous_chunk_start_time = current_start_time
                 current_start_time += actual_dur
                 n += 1
             else:
@@ -335,7 +382,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                 temp_converted_path.unlink()
             except OSError:
                 pass
-        for pattern in ("_tmp_*.mp4", "_best_*.mp4"):
+        for pattern in ("_tmp_*.mp4", "_best_*.mp4", "_merge_*.mp4"):
             for f in outdir_path.glob(pattern):
                 try:
                     f.unlink()
