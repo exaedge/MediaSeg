@@ -25,7 +25,6 @@ Current primary use case:
 - Prepare long-form media for NotebookLM and other size-limited upload workflows
 - Split large media files below a configurable size limit
 - Keep MP4 splits on a stream copy path without re-encoding
-- Preserve original quality whenever possible
 - Work entirely on local files
 
 ## Screenshots
@@ -55,7 +54,12 @@ Current primary use case:
 
 For bug reports, feature requests, and other feedback, open a [GitHub Issue](https://github.com/exaedge/MediaSeg/issues).
 
-Please include the app version, macOS version, any steps to reproduce, and the Session Log if available.
+If you tested MediaSeg with a file that behaved unexpectedly, please include:
+
+- MediaSeg version
+- input file format
+- approximate file size
+- whether the split succeeded or failed
 
 ---
 
@@ -131,18 +135,10 @@ Notes on WEBM:
 - CPU usage may be substantially higher during WEBM conversion.
 - Large WEBM recordings may require several minutes before splitting begins.
 
-Planned:
-
-- mov
-- mkv
-- audio-only formats
-- additional formats as needed
-
 ### Output
 
 Output files should:
 
-- Preserve original quality whenever possible
 - Keep MP4 splits on a no-re-encode stream copy path
 - Stay below a configurable size limit
 - Attempt to keep chunk sizes within 90%-98% of the configured limit
