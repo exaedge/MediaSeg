@@ -11,6 +11,7 @@ MB_BASE = 1000 * 1000
 TARGET_MIN_UTILIZATION = 0.90
 TARGET_MAX_UTILIZATION = 0.98
 MAX_ADJUSTMENTS = 8
+DURATION_EPSILON_SEC = 0.01
 
 def get_runtime_search_roots():
     roots = []
@@ -175,7 +176,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
 
         while current_start_time < dur_total:
             remaining_duration = dur_total - current_start_time
-            if remaining_duration <= 0:
+            if remaining_duration <= DURATION_EPSILON_SEC:
                 break
 
             cand_dur_int = int(round(min(seg_time, remaining_duration)))
@@ -205,7 +206,7 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                     break
 
                 remaining_duration = dur_total - current_start_time
-                if remaining_duration <= 0:
+                if remaining_duration <= DURATION_EPSILON_SEC:
                     break
 
                 if cand_dur_int >= remaining_duration:
@@ -235,6 +236,18 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                 else:
                     out_bytes = 0
                     out_mb = 0
+
+                if out_bytes > 0:
+                    try:
+                        out_duration = get_duration(out_path, ffprobe_path)
+                    except Exception:
+                        out_duration = 0.0
+                    if out_duration <= DURATION_EPSILON_SEC:
+                        out_path.unlink(missing_ok=True)
+                        out_bytes = 0
+                        out_mb = 0
+                else:
+                    out_duration = 0.0
 
                 if 0 < out_bytes <= max_size_bytes:
                     distance = abs(target_max_bytes - out_bytes)
@@ -307,6 +320,9 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
                     actual_dur = get_duration(out_path, ffprobe_path)
                 except Exception:
                     actual_dur = float(cand_dur_int)
+                if actual_dur <= DURATION_EPSILON_SEC:
+                    out_path.unlink(missing_ok=True)
+                    break
                 current_start_time += actual_dur
                 n += 1
             else:
