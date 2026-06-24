@@ -150,11 +150,14 @@ Output files should:
 
 - Keep MP4 splits on a no-re-encode stream copy path
 - Keep MOV splits on MOV output
+- Keep M4A, MP3, and WAV splits on their original output formats
 - Stay below a configurable size limit
 - Attempt to keep chunk sizes within 90%-98% of the configured limit
 - Use the configured limit as a hard upper bound
 - Default target: 200MB
 - Generate sequential names
+
+For supported stream-copy paths, MediaSeg does not re-encode the media streams during splitting. Output files are remuxed as new chunks.
 
 Example:
 
