@@ -92,8 +92,10 @@ Implemented:
 
 - Local-first splitter core and CLI entry point
 - PySide6 GUI with drag & drop, output folder selection, session log, and processing states
-- MP4 and WEBM support through local `ffmpeg` / `ffprobe`
+- Official support for MP4, WEBM, and MOV
+- Experimental support for M4A, MP3, and WAV
 - MP4 split path uses ffmpeg stream copy (`-c copy`) without re-encoding
+- MOV input is split to MOV output
 - WEBM input is converted to MP4 first, then split locally
 - Configurable chunk sizing with target-range optimization
 - macOS app packaging support with SVG icons and license handling
@@ -120,10 +122,17 @@ python3 mediaseg.py "video.mp4" --max-size 130
 
 ### Input
 
-Supported:
+Officially supported:
 
 - mp4
 - webm
+- mov
+
+Experimental:
+
+- m4a
+- mp3
+- wav
 
 Notes on WEBM:
 
@@ -140,6 +149,7 @@ Notes on WEBM:
 Output files should:
 
 - Keep MP4 splits on a no-re-encode stream copy path
+- Keep MOV splits on MOV output
 - Stay below a configurable size limit
 - Attempt to keep chunk sizes within 90%-98% of the configured limit
 - Use the configured limit as a hard upper bound
