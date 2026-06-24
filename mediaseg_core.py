@@ -114,7 +114,8 @@ def split_media(input_file: str, max_size_mb: int = 200, logger=print, output_di
 
     ext = input_file_path.suffix.lower()
     is_webm = ext == ".webm"
-    output_ext = ".mov" if ext == ".mov" and not is_webm else ".mp4"
+    passthrough_output_exts = {".mov", ".m4a", ".mp3", ".wav"}
+    output_ext = ext if ext in passthrough_output_exts and not is_webm else ".mp4"
 
     target_file_path = input_file_path
     temp_converted_path = None
