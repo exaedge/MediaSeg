@@ -1584,15 +1584,22 @@ class MainWindow(QMainWindow):
         out_folder_lbl = QLabel("Output Folder")
         out_folder_lbl.setStyleSheet("font-weight: bold; font-size: 13px; color: #F3F5F8;")
         config_layout.addWidget(out_folder_lbl)
+
+        out_folder_help = QLabel("Use Browse to choose a custom output folder.")
+        out_folder_help.setStyleSheet("font-size: 11px; color: #A6B0BF;")
+        config_layout.addWidget(out_folder_help)
         
         self.output_path_edit = QLineEdit()
         self.output_path_edit.setReadOnly(True)
-        self.output_path_edit.setPlaceholderText("Same folder as source (Default)")
+        self.output_path_edit.setFocusPolicy(Qt.NoFocus)
+        self.output_path_edit.setCursorPosition(0)
+        self.output_path_edit.setPlaceholderText("Same folder as source (Default). Use Browse to change.")
         config_layout.addWidget(self.output_path_edit)
 
         out_buttons_layout = QHBoxLayout()
         out_buttons_layout.setContentsMargins(0, 4, 0, 4)
         out_buttons_layout.setSpacing(8)
+        out_buttons_layout.addStretch()
         self.out_browse_button = QPushButton("\u00A0\u00A0Browse")
         self.out_browse_button.setObjectName("tertiaryButton")
         self.out_browse_button.clicked.connect(self.browse_output_folder)
@@ -1607,7 +1614,6 @@ class MainWindow(QMainWindow):
         
         out_buttons_layout.addWidget(self.out_browse_button)
         out_buttons_layout.addWidget(self.out_reset_button)
-        out_buttons_layout.addStretch()
         config_layout.addLayout(out_buttons_layout)
 
         main_layout.addWidget(config_panel)
