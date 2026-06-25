@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 
-PUBLIC_VERSION = "1.0.0"
+PUBLIC_VERSION = "1.1.0"
 BUILD_SHA_ENV_VAR = "MEDIASEG_BUILD_SHA"
 BUILD_SHA_FILE_PARTS = ("build", "build_sha.txt")
 
