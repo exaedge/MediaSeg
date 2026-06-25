@@ -6,8 +6,6 @@ Status: Stable
 
 Platform: macOS on Apple Silicon
 
-Default target chunk size: 200MB
-
 MediaSeg splits large media files into upload-ready chunks with local processing and a no-re-encode split path for MP4 input.
 
 It was produced and directed with full AI assistance, and shipped in 2 days from idea to public release.
@@ -18,32 +16,31 @@ It was produced and directed with full AI assistance, and shipped in 2 days from
 
 ## Overview
 
-MediaSeg is a local macOS utility that splits large media files into upload-ready chunks with local processing and a no-re-encode split path for MP4 input.
+MediaSeg is a local macOS utility for splitting large media files into upload-ready chunks.
 
-Current primary use case:
-
-- Prepare long-form media for NotebookLM and other size-limited upload workflows
-- Split large media files below a configurable size limit
-- Keep MP4 splits on a stream copy path without re-encoding
-- Work entirely on local files
+- Local processing only
+- Default target chunk size: 200MB
+- MP4 uses a stream-copy split path without re-encoding
+- Official support: MP4, WEBM, MOV
+- Experimental support: M4A, MP3, WAV
 
 ## Screenshots
 
 <table>
   <tr>
     <td align="center">
-      <img src="assets/screenshots/mediaseg-initial-state.png" alt="MediaSeg initial state" width="380"><br>
-      Initial state
+      <img src="assets/screenshots/mediaseg-splitting.png" alt="MediaSeg splitting state" width="380"><br>
+      1. Splitting
     </td>
     <td align="center">
-      <img src="assets/screenshots/mediaseg-splitting-state.png" alt="MediaSeg splitting state" width="380"><br>
-      Splitting
+      <img src="assets/screenshots/mediaseg-completed.png" alt="MediaSeg output complete" width="380"><br>
+      2. Completed
     </td>
   </tr>
   <tr>
     <td colspan="2" align="center">
-      <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg output complete" width="760"><br>
-      Output complete
+      <img src="assets/screenshots/mediaseg-output-complete.png" alt="MediaSeg segmented output files in Finder" width="760"><br>
+      3. Review segmented output files
     </td>
   </tr>
 </table>
@@ -63,64 +60,7 @@ If you tested MediaSeg with a file that behaved unexpectedly, please include:
 
 ---
 
-## Project Structure
-
-The repository is intentionally small, so the main entry points are easy to locate:
-
-- `mediaseg.py`
-  - CLI entry point
-  - Parses arguments and calls the core splitter
-- `mediaseg_core.py`
-  - Dependency checks
-  - Duration probing
-  - Media splitting and output folder creation
-- `mediaseg_gui.py`
-  - PySide6 desktop UI
-  - Drag & drop, file info card, collapsible session log, activity states, output folder selection
-- `assets/icons/`
-  - Lucide-based SVG icons used by the GUI
-- `MediaSeg.spec`
-  - PyInstaller build spec for macOS app packaging
-- `THIRD_PARTY_LICENSES.md`
-  - Third-party license and attribution notes
-
----
-
-## Current Status
-
-Implemented:
-
-- Local-first splitter core and CLI entry point
-- PySide6 GUI with drag & drop, output folder selection, session log, and processing states
-- Official support for MP4, WEBM, and MOV
-- Experimental support for M4A, MP3, and WAV
-- MP4 split path uses ffmpeg stream copy (`-c copy`) without re-encoding
-- MOV input is split to MOV output
-- WEBM input is converted to MP4 first, then split locally
-- Configurable chunk sizing with target-range optimization
-- macOS app packaging support with SVG icons and license handling
-
-## From direction to public release in 2 days
-
-MediaSeg was produced and directed with full AI assistance, and shipped in 2 days.
-
-The point is not that AI can do everything. The point is that strong direction and production can turn an idea into a practical product, fast.
-
-Example:
-
-```bash
-python3 mediaseg.py "video.mp4"
-```
-
-```bash
-python3 mediaseg.py "video.mp4" --max-size 130
-```
-
----
-
 ## Current Requirements
-
-### Input
 
 Officially supported:
 
@@ -134,37 +74,21 @@ Experimental:
 - mp3
 - wav
 
-Notes on WEBM:
+Output behavior:
 
-- WEBM files are converted before splitting.
-- The conversion step uses local ffmpeg to create an MP4 intermediate before splitting.
-- After conversion, the split step still uses stream copy rather than re-encoding.
-- The conversion step preserves media quality as much as possible, but it is not the same as the MP4 no-re-encode path.
-- Conversion can take significantly longer than MP4 processing.
-- CPU usage may be substantially higher during WEBM conversion.
-- Large WEBM recordings may require several minutes before splitting begins.
+- MP4 -> MP4 with stream copy
+- MOV -> MOV
+- M4A / MP3 / WAV -> same format output
+- WEBM -> converted to MP4 first, then split locally
 
-### Output
+Chunk sizing:
 
-Output files should:
-
-- Keep MP4 splits on a no-re-encode stream copy path
-- Keep MOV splits on MOV output
-- Keep M4A, MP3, and WAV splits on their original output formats
-- Stay below a configurable size limit
-- Attempt to keep chunk sizes within 90%-98% of the configured limit
-- Use the configured limit as a hard upper bound
-- Default target: 200MB
-- Generate sequential names
-
-For supported stream-copy paths, MediaSeg does not re-encode the media streams during splitting. Output files are remuxed as new chunks.
-
-Example:
+- Default target chunk size: 200MB
+- Uses the configured value as a hard upper bound
+- Targets roughly 90%-98% of the limit when possible
+- Generates sequential output names in a timestamped folder
 
 ```text
-Input:
-TrainingVideo.mp4
-
 Output Folder:
 TrainingVideo_20260614-101523/
 
@@ -178,35 +102,20 @@ TrainingVideo_003.mp4
 
 ## Installation
 
-### Create Virtual Environment
-
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-### Install Dependencies
-
 ```bash
 pip install PySide6
 ```
-
-### Install ffmpeg for source runs
 
 ```bash
 brew install ffmpeg
 ```
 
-If you are not familiar with `brew`:
-
-- `ffmpeg` is the video tool MediaSeg uses for probing, conversion, and splitting.
-- `brew` is the package manager used to install it on macOS.
-- If Homebrew is missing, install it first, then run `brew install ffmpeg`.
-- Inside the app, `Help > Setup ffmpeg` explains the same steps for source runs.
-
-Packaged MediaSeg release builds bundle FFmpeg / FFprobe and do not rely on a system-installed copy.
-
-The GUI uses macOS VideoToolbox for WEBM-to-MP4 conversion, so that path no longer depends on `libx264`.
+Release builds bundle FFmpeg / FFprobe. Source runs require a local `ffmpeg` / `ffprobe`.
 
 ---
 
@@ -215,7 +124,7 @@ The GUI uses macOS VideoToolbox for WEBM-to-MP4 conversion, so that path no long
 - Apple Silicon Mac
 - macOS 15 Sequoia or later
 - Python 3.13+
-- ffmpeg / ffprobe for source runs
+- `ffmpeg` / `ffprobe` for source runs
 - PySide6 (GUI)
 
 ---
@@ -238,22 +147,7 @@ python3 mediaseg.py "/path/to/video.mp4" --max-size 130
 python3 mediaseg_gui.py
 ```
 
-Key features:
-
-- Drag & Drop
-- Chunk-size control
-- Activity indicator for processing states
-- SVG icons throughout the UI
-- Output Folder selection
-- Collapsible SESSION LOG section, closed by default
-- Help menu with `How to Use`, `Setup ffmpeg`, `Common Issues`, `Third-Party Licenses`, and `About MediaSeg`
-
-If `ffmpeg` or `ffprobe` is missing:
-
-- MediaSeg shows a dependency warning dialog at startup.
-- `Start Splitting` stays disabled until the dependency is available.
-- Release builds should already include bundled FFmpeg / FFprobe.
-- Source runs can use `Help > Setup ffmpeg` for installation guidance and verification commands.
+If `ffmpeg` or `ffprobe` is missing in a source run, the GUI shows a dependency warning and disables splitting until the dependency is available.
 
 ---
 
@@ -266,31 +160,9 @@ Use the table below to choose the build path:
 | Public | Direct distribution via GitHub or the corporate site | `./build_public.sh` | `dist/MediaSeg.app` + FFmpeg source archive + build configuration |
 | Private | Handoff to a specific recipient | `./build_private.sh` | `dist/MediaSeg.app` + `dist/MediaSeg.dmg` + FFmpeg source archive + build configuration |
 
-Notes:
+Both build scripts bundle LGPL-compatible FFmpeg / FFprobe from official source and place the matching source archive and build configuration in `dist/`.
 
-- Assets (SVG icons) are bundled through MediaSeg.spec.
-- Activity Indicator icons require the assets directory to be included in the build.
-- THIRD_PARTY_LICENSES.md should be distributed together with release builds.
-- Both build scripts compile an LGPL-compatible FFmpeg / FFprobe bundle from official FFmpeg source and include it in the app.
-- Both build scripts also place a matching FFmpeg source archive and build-configuration text file in `dist/`.
-- The bundling step rejects FFmpeg builds that enable GPL or nonfree options.
-- The app includes `Help > Setup ffmpeg` and `Help > Common Issues` for dependency guidance.
-
-If you need to do the private build manually:
-
-```bash
-./build_public.sh
-codesign --force --deep --sign - dist/MediaSeg.app
-```
-
-Then package `dist/MediaSeg.app` into a DMG and keep the matching FFmpeg source archive with the release payload.
-
-Current size notes:
-
-- `dist/MediaSeg.app` without ffmpeg bundled is smaller than the previous bundle
-- `dist/MediaSeg.dmg` compresses much smaller than the app folder itself
-
-The DMG is the recommended choice for private handoff when the recipient can use system `ffmpeg` / `ffprobe`.
+When publishing release binaries, keep the matching FFmpeg source archive on the same download page as the app artifacts and state that MediaSeg uses libraries from the FFmpeg project under the LGPL v2.1.
 
 Run:
 
@@ -305,78 +177,3 @@ open dist/MediaSeg.app
 MediaSeg uses FFmpeg / FFprobe, PySide6 / Qt, and Lucide Icons.
 
 See [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md), which is also available from the app's Help menu in release builds.
-
----
-
-## Examples
-
-Output folder naming:
-
-```text
-MeetingRecording_20260614-101523/
-```
-
-Generated files:
-
-```text
-MeetingRecording_001.mp4
-MeetingRecording_002.mp4
-MeetingRecording_003.mp4
-```
-
----
-
-## Chunk Size Strategy
-
-MediaSeg uses a target-based sizing algorithm.
-
-Goals:
-
-- Stay below the configured maximum size
-- Prefer chunk sizes close to the target
-- Preserve original media quality with ffmpeg stream copy mode (`-c copy`) for the split step
-- Use macOS VideoToolbox for WEBM conversion
-
-Notes:
-
-- Default size input is 200MB.
-- MP4 input stays on a local stream copy split path and is not re-encoded during splitting.
-- WEBM input is converted to MP4 first, then split locally.
-- MediaSeg is not a frame-accurate editor or keyframe-aware finishing tool.
-- Very variable bitrate media may produce smaller final chunks.
-- MediaSeg prefers the best valid chunk below the limit over failure.
-
----
-
-## Non-Goals
-
-Currently out of scope:
-
-- Cloud processing
-- Video editing
-- Frame-accurate editing or keyframe-aware finishing workflows
-- Video compression optimization
-- Git integration
-- Media transcription
-
-## Development Principles
-
-- Local-first
-- Simple UX
-- Minimal dependencies
-- Preserve media quality
-- Prefer predictable chunk sizing
-- Prioritize reliability over performance
-
-## Primary Use Case
-
-Long-form media often exceeds upload limits imposed by AI tools and knowledge management platforms.
-
-MediaSeg prepares local media files for upload by:
-
-1. Splitting files into smaller chunks
-2. Preserving media quality whenever possible
-3. Keeping chunk sizes below a configurable limit
-4. Optimizing chunk sizes toward 90%-98% of the configured target when possible
-5. Falling back to the best valid chunk when exact optimization is not achievable
-6. Generating organized output folders automatically

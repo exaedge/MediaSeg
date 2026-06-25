@@ -28,8 +28,11 @@ https://ffmpeg.org/
 License:
 FFmpeg is LGPL v2.1 or later by default.
 
-Official License:
+FFmpeg legal checklist:
 https://ffmpeg.org/legal.html
+
+LGPL v2.1 text:
+https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
 
 Used for:
 Media inspection and media splitting operations.
@@ -40,6 +43,7 @@ Notes:
 - The bundled FFmpeg build must not include `--enable-gpl` or `--enable-nonfree`.
 - The bundled FFmpeg build is produced from official FFmpeg source with dynamic libraries enabled.
 - Matching FFmpeg source and build-configuration files are distributed alongside MediaSeg release artifacts.
+- Public download pages for MediaSeg releases should keep the matching FFmpeg source archive on the same download page as the binary artifacts.
 - Source runs of MediaSeg can still use local `ffmpeg` and `ffprobe` from `PATH`.
 
 ---

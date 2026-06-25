@@ -1128,7 +1128,7 @@ class MainWindow(QMainWindow):
                 background-color: transparent;
                 color: #8FB3FF;
                 font-size: 12px;
-                font-weight: 600;
+                font-weight: normal;
                 padding: 2px 6px;
                 min-height: 24px;
                 max-height: 24px;
@@ -1200,7 +1200,7 @@ class MainWindow(QMainWindow):
             },
             {
                 "title": "Runtime Requirement",
-                "body": "Release builds bundle FFmpeg and FFprobe. Source runs use local ffmpeg and ffprobe. Bundled FFmpeg is distributed under the LGPL v2.1.",
+                "body": "This software uses libraries from the FFmpeg project under the LGPL v2.1. Release builds bundle FFmpeg and FFprobe. Source runs use local ffmpeg and ffprobe.",
             },
             {
                 "title": "FFmpeg Source",
