@@ -5,8 +5,10 @@ import math
 import time
 from pathlib import Path
 from mediaseg_version import get_public_version, get_build_version
-from PySide6.QtCore import QEvent, QThread, Signal, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl, QSettings, QLocale
-from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIntValidator, QFontMetrics, QIcon, QPainter, QPixmap, QPalette
+from themes import THEME_SYSTEM, THEME_DARK, THEME_LIGHT, THEME_NEON, THEME_KEYS, THEMES, resolve_theme_key, theme_display_tokens, dialog_stylesheet
+from ui_strings import LANG_SYSTEM, LANG_EN, LANG_JA, LANG_VI, build_strings, system_language_code
+from PySide6.QtCore import QEvent, QThread, Signal, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl, QSettings
+from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIntValidator, QFontMetrics, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtSvgWidgets import QSvgWidget
 from PySide6.QtWidgets import (
@@ -68,377 +70,53 @@ OFFICIALLY_SUPPORTED_EXTENSIONS = (".mp4", ".webm", ".mov")
 EXPERIMENTAL_SUPPORTED_EXTENSIONS = (".m4a", ".mp3", ".wav")
 GUI_ACCEPTED_EXTENSIONS = OFFICIALLY_SUPPORTED_EXTENSIONS + EXPERIMENTAL_SUPPORTED_EXTENSIONS
 SUPPORT_FEEDBACK_URL = "https://github.com/exaedge/MediaSeg/issues"
-THEME_SYSTEM = "system"
-THEME_DARK = "dark"
-THEME_LIGHT = "light"
-THEME_NEON = "neon_tokyo"
-LANG_SYSTEM = "system"
-LANG_EN = "en"
-LANG_JA = "ja"
-LANG_VI = "vi"
-
-THEMES = {
-    THEME_DARK: {
-        "window_bg": "#131313",
-        "text": "#E5E2E1",
-        "muted_text": "#C2C6D8",
-        "subtle_text": "#8C90A1",
-        "surface": "#171B22",
-        "surface_alt": "#141821",
-        "surface_soft": "#232833",
-        "surface_modal": "#201F1F",
-        "surface_hover": "#2A2A2A",
-        "border": "#2B313B",
-        "border_soft": "#424656",
-        "primary": "#0066FF",
-        "primary_hover": "#2A7BFF",
-        "primary_disabled": "#24407F",
-        "primary_disabled_text": "#B9C9EE",
-        "link": "#8FB3FF",
-        "success": "#34D399",
-        "warning": "#FF9A9A",
-        "warning_bg": "#2B1F22",
-        "warning_bg_hover": "#342125",
-        "warning_border_disabled": "#8A4D4D",
-        "warning_text_disabled": "#8A4D4D",
-        "button_secondary_bg": "#232833",
-        "button_secondary_disabled": "#1B202A",
-        "button_secondary_text": "#E8EAF0",
-        "button_secondary_text_disabled": "#6E7686",
-        "open_button_bg": "#18263A",
-        "open_button_text": "#8FB3FF",
-        "open_button_disabled_bg": "#202734",
-        "open_button_disabled_border": "#36465E",
-        "open_button_disabled_text": "#91A5C6",
-        "drop_bg": "#171B22",
-        "drop_hover": "#16233A",
-        "drop_border": "#5B8CFF",
-        "drop_border_hover": "#7DA2FF",
-        "overlay_backdrop": "rgba(10, 12, 16, 150)",
-        "overlay_card": "rgba(23, 27, 34, 240)",
-        "menu_trigger_fg": "#E8EAF0",
-        "menu_trigger_hover_bg": "rgba(232, 234, 240, 0.10)",
-        "menu_trigger_pressed_bg": "rgba(232, 234, 240, 0.16)",
-        "menu_trigger_disabled_fg": "#6E7686",
-        "footer_text": "#8C90A1",
-        "footer_logo_fg": "#F4F6FF",
-    },
-    THEME_LIGHT: {
-        "window_bg": "#F4F7FB",
-        "text": "#1B2430",
-        "muted_text": "#4F637A",
-        "subtle_text": "#66778E",
-        "surface": "#FFFFFF",
-        "surface_alt": "#F7F9FC",
-        "surface_soft": "#E9EEF6",
-        "surface_modal": "#FFFFFF",
-        "surface_hover": "#EDF3FF",
-        "border": "#CFD8E6",
-        "border_soft": "#DDE5F0",
-        "primary": "#005EEB",
-        "primary_hover": "#1F6DFF",
-        "primary_disabled": "#9EB8E8",
-        "primary_disabled_text": "#EFF5FF",
-        "link": "#005EEB",
-        "success": "#0B8F60",
-        "warning": "#D9485F",
-        "warning_bg": "#FFF1F3",
-        "warning_bg_hover": "#FFE6EA",
-        "warning_border_disabled": "#E7B4BE",
-        "warning_text_disabled": "#C68C97",
-        "button_secondary_bg": "#E9EEF6",
-        "button_secondary_disabled": "#F0F3F8",
-        "button_secondary_text": "#1B2430",
-        "button_secondary_text_disabled": "#98A4B7",
-        "open_button_bg": "#EAF2FF",
-        "open_button_text": "#005EEB",
-        "open_button_disabled_bg": "#E3EAF5",
-        "open_button_disabled_border": "#C8D5E8",
-        "open_button_disabled_text": "#6F83A3",
-        "drop_bg": "#FFFFFF",
-        "drop_hover": "#EFF5FF",
-        "drop_border": "#4C7EFF",
-        "drop_border_hover": "#2F63F7",
-        "overlay_backdrop": "rgba(241, 245, 251, 185)",
-        "overlay_card": "rgba(255, 255, 255, 245)",
-        "menu_trigger_fg": "#42536A",
-        "menu_trigger_hover_bg": "rgba(27, 36, 48, 0.08)",
-        "menu_trigger_pressed_bg": "rgba(27, 36, 48, 0.14)",
-        "menu_trigger_disabled_fg": "#A8B3C4",
-        "footer_text": "#66778E",
-        "footer_logo_fg": "#1B2430",
-    },
-    THEME_NEON: {
-        "window_bg": "#0A0A12",
-        "text": "#F4F6FF",
-        "muted_text": "#B6BDD6",
-        "subtle_text": "#8891AF",
-        "surface": "#111320",
-        "surface_alt": "#0E1020",
-        "surface_soft": "#171B2A",
-        "surface_modal": "#131725",
-        "surface_hover": "#161C30",
-        "border": "#4E3156",
-        "border_soft": "#263349",
-        "primary": "#FF2D78",
-        "primary_hover": "#FF4D8E",
-        "primary_disabled": "#73415B",
-        "primary_disabled_text": "#F8D2E0",
-        "link": "#00FFCC",
-        "success": "#00FFCC",
-        "warning": "#FFE04A",
-        "warning_bg": "#2E2430",
-        "warning_bg_hover": "#3B2B3A",
-        "warning_border_disabled": "#8D7D42",
-        "warning_text_disabled": "#B8AA72",
-        "button_secondary_bg": "#151826",
-        "button_secondary_disabled": "#12141F",
-        "button_secondary_text": "#F4F6FF",
-        "button_secondary_text_disabled": "#77819D",
-        "open_button_bg": "#131C27",
-        "open_button_text": "#00FFCC",
-        "open_button_disabled_bg": "#161A24",
-        "open_button_disabled_border": "#273141",
-        "open_button_disabled_text": "#7B95B1",
-        "drop_bg": "#111320",
-        "drop_hover": "#13192A",
-        "drop_border": "#FF2D78",
-        "drop_border_hover": "#00FFCC",
-        "overlay_backdrop": "rgba(10, 10, 18, 175)",
-        "overlay_card": "rgba(17, 19, 32, 245)",
-        "menu_trigger_fg": "#F4F6FF",
-        "menu_trigger_hover_bg": "rgba(255, 45, 120, 0.12)",
-        "menu_trigger_pressed_bg": "rgba(255, 45, 120, 0.20)",
-        "menu_trigger_disabled_fg": "#77819D",
-        "footer_text": "#8891AF",
-        "footer_logo_fg": "#F4F6FF",
-    },
-}
-
-STRINGS = {
-    LANG_EN: {
-        "menu_button": "Options",
-        "menu_theme": "Theme",
-        "menu_language": "Language",
-        "menu_support_feedback": "Support & Feedback",
-        "menu_how_to_use": "How to Use",
-        "menu_setup_ffmpeg": "Setup ffmpeg",
-        "menu_common_issues": "Common Issues",
-        "menu_licenses": "Third-Party Licenses",
-        "menu_about": "About MediaSeg",
-        "theme_system": "System",
-        "theme_dark": "Dark",
-        "theme_light": "Light",
-        "theme_neon": "Neon Tokyo",
-        "lang_system": "System",
-        "lang_english": "English",
-        "lang_japanese": "Japanese",
-        "lang_vietnamese": "Vietnamese",
-        "drop_title": "Drop file to segment",
-        "drop_subtitle": "Official: MP4, WEBM, MOV | Experimental: M4A, MP3, WAV",
-        "path_placeholder": "Or select path manually...",
-        "browse": "Browse",
-        "config_title": "CONFIGURATION",
-        "chunk_size": "Target Chunk Size",
-        "output_folder": "Output Folder",
-        "output_folder_help": "Use Browse to choose a custom output folder.",
-        "output_folder_placeholder": "Same folder as source (Default). Use Browse to change.",
-        "reset": "Reset",
-        "session_log": "SESSION LOG",
-        "start_idle": "\u00A0\u00A0Start Splitting",
-        "start_preparing": "\u00A0\u00A0Preparing...",
-        "start_converting": "\u00A0\u00A0Converting...",
-        "start_splitting": "\u00A0\u00A0Splitting...",
-        "start_cleaning": "\u00A0\u00A0Cleaning...",
-        "start_completed": "\u00A0\u00A0Completed",
-        "start_error": "\u00A0\u00A0Error",
-        "open_output": "\u00A0\u00A0Open Output Folder",
-        "fileinfo_empty": "No file selected",
-        "fileinfo_format": "Format",
-        "fileinfo_size": "Original Size",
-        "fileinfo_duration": "Duration",
-        "fileinfo_chunks": "Estimated Chunks",
-        "size_warning_below_reliable": f"Below {MIN_RELIABLE_CHUNK_SIZE_MB} MB, some media files may fail.",
-        "overlay_preparing_title": "Preparing",
-        "overlay_preparing_body": "MediaSeg is preparing the current file. Controls are temporarily locked.",
-        "overlay_converting_title": "Converting",
-        "overlay_converting_body": "MediaSeg is converting this file before splitting. Controls are temporarily locked.",
-        "overlay_splitting_title": "Splitting",
-        "overlay_splitting_body": "MediaSeg is splitting the current file. Controls are temporarily locked.",
-        "overlay_cleaning_title": "Cleaning",
-        "overlay_cleaning_body": "MediaSeg is cleaning temporary files. Controls are temporarily locked.",
-    },
-    LANG_JA: {
-        "menu_button": "オプション",
-        "menu_theme": "テーマ",
-        "menu_language": "言語",
-        "menu_support_feedback": "サポートとフィードバック",
-        "menu_how_to_use": "使い方",
-        "menu_setup_ffmpeg": "ffmpeg設定",
-        "menu_common_issues": "よくある問題",
-        "menu_licenses": "サードパーティライセンス",
-        "menu_about": "MediaSegについて",
-        "theme_system": "システム",
-        "theme_dark": "ダーク",
-        "theme_light": "ライト",
-        "theme_neon": "Neon Tokyo",
-        "lang_system": "システム",
-        "lang_english": "英語",
-        "lang_japanese": "日本語",
-        "lang_vietnamese": "ベトナム語",
-        "drop_title": "ファイルをドロップして分割",
-        "drop_subtitle": "正式: MP4, WEBM, MOV | 試験対応: M4A, MP3, WAV",
-        "path_placeholder": "またはパスを手入力...",
-        "browse": "参照",
-        "config_title": "設定",
-        "chunk_size": "目標チャンクサイズ",
-        "output_folder": "出力フォルダ",
-        "output_folder_help": "カスタム出力先は参照から選択してください。",
-        "output_folder_placeholder": "既定ではソースと同じ場所に出力します。変更は参照から行います。",
-        "reset": "リセット",
-        "session_log": "セッションログ",
-        "start_idle": "\u00A0\u00A0分割開始",
-        "start_preparing": "\u00A0\u00A0準備中...",
-        "start_converting": "\u00A0\u00A0変換中...",
-        "start_splitting": "\u00A0\u00A0分割中...",
-        "start_cleaning": "\u00A0\u00A0整理中...",
-        "start_completed": "\u00A0\u00A0完了",
-        "start_error": "\u00A0\u00A0エラー",
-        "open_output": "\u00A0\u00A0出力フォルダを開く",
-        "fileinfo_empty": "ファイル未選択",
-        "fileinfo_format": "形式",
-        "fileinfo_size": "元サイズ",
-        "fileinfo_duration": "長さ",
-        "fileinfo_chunks": "想定チャンク数",
-        "size_warning_below_reliable": f"{MIN_RELIABLE_CHUNK_SIZE_MB} MB未満では、一部メディアで失敗する場合があります。",
-        "overlay_preparing_title": "準備中",
-        "overlay_preparing_body": "MediaSeg が現在のファイルを準備中です。操作は一時的にロックされています。",
-        "overlay_converting_title": "変換中",
-        "overlay_converting_body": "MediaSeg が分割前の変換を実行しています。操作は一時的にロックされています。",
-        "overlay_splitting_title": "分割中",
-        "overlay_splitting_body": "MediaSeg が現在のファイルを分割中です。操作は一時的にロックされています。",
-        "overlay_cleaning_title": "整理中",
-        "overlay_cleaning_body": "MediaSeg が一時ファイルを整理中です。操作は一時的にロックされています。",
-    },
-    LANG_VI: {
-        "menu_button": "Tùy chọn",
-        "menu_theme": "Giao diện",
-        "menu_language": "Ngôn ngữ",
-        "menu_support_feedback": "Hỗ trợ & Phản hồi",
-        "menu_how_to_use": "Hướng dẫn sử dụng",
-        "menu_setup_ffmpeg": "Thiết lập ffmpeg",
-        "menu_common_issues": "Sự cố thường gặp",
-        "menu_licenses": "Giấy phép bên thứ ba",
-        "menu_about": "Giới thiệu MediaSeg",
-        "theme_system": "Hệ thống",
-        "theme_dark": "Tối",
-        "theme_light": "Sáng",
-        "theme_neon": "Neon Tokyo",
-        "lang_system": "Hệ thống",
-        "lang_english": "Tiếng Anh",
-        "lang_japanese": "Tiếng Nhật",
-        "lang_vietnamese": "Tiếng Việt",
-        "drop_title": "Thả tệp vào đây để chia nhỏ",
-        "drop_subtitle": "Chính thức: MP4, WEBM, MOV | Thử nghiệm: M4A, MP3, WAV",
-        "path_placeholder": "Hoặc chọn đường dẫn...",
-        "browse": "Duyệt...",
-        "config_title": "CẤU HÌNH",
-        "chunk_size": "Kích thước mỗi phần",
-        "output_folder": "Thư mục đầu ra",
-        "output_folder_help": "Nhấn \"Duyệt...\" để chọn thư mục đầu ra.",
-        "output_folder_placeholder": "Mặc định sẽ lưu cùng thư mục với tệp gốc. Nhấn \"Duyệt...\" để thay đổi.",
-        "reset": "Đặt lại",
-        "session_log": "NHẬT KÝ PHIÊN",
-        "start_idle": "\u00A0\u00A0Bắt đầu chia tệp",
-        "start_preparing": "\u00A0\u00A0Đang chuẩn bị...",
-        "start_converting": "\u00A0\u00A0Đang chuyển đổi...",
-        "start_splitting": "\u00A0\u00A0Đang chia...",
-        "start_cleaning": "\u00A0\u00A0Đang dọn...",
-        "start_completed": "\u00A0\u00A0Hoàn tất",
-        "start_error": "\u00A0\u00A0Lỗi",
-        "open_output": "\u00A0\u00A0Mở thư mục đầu ra",
-        "fileinfo_empty": "Chưa chọn tệp",
-        "fileinfo_format": "Định dạng",
-        "fileinfo_size": "Kích thước gốc",
-        "fileinfo_duration": "Thời lượng",
-        "fileinfo_chunks": "Số phần dự kiến",
-        "size_warning_below_reliable": f"Dưới {MIN_RELIABLE_CHUNK_SIZE_MB} MB, một số tệp có thể thất bại.",
-        "overlay_preparing_title": "Đang chuẩn bị",
-        "overlay_preparing_body": "MediaSeg đang chuẩn bị tệp hiện tại. Các điều khiển tạm thời bị khóa.",
-        "overlay_converting_title": "Đang chuyển đổi",
-        "overlay_converting_body": "MediaSeg đang chuyển đổi tệp trước khi chia. Các điều khiển tạm thời bị khóa.",
-        "overlay_splitting_title": "Đang chia",
-        "overlay_splitting_body": "MediaSeg đang chia tệp hiện tại. Các điều khiển tạm thời bị khóa.",
-        "overlay_cleaning_title": "Đang dọn",
-        "overlay_cleaning_body": "MediaSeg đang dọn các tệp tạm. Các điều khiển tạm thời bị khóa.",
-    },
-}
+STRINGS = build_strings(MIN_RELIABLE_CHUNK_SIZE_MB)
 
 
-def system_language_code():
-    locale_name = QLocale.system().name().lower()
-    if locale_name.startswith("ja"):
-        return LANG_JA
-    if locale_name.startswith("vi"):
-        return LANG_VI
-    return LANG_EN
+def center_window_to_parent(window, parent):
+    if parent is None:
+        return
+    parent_center = parent.frameGeometry().center()
+    window_rect = window.frameGeometry()
+    window_rect.moveCenter(parent_center)
+    window.move(window_rect.topLeft())
 
 
-def theme_display_tokens(theme_key):
-    return THEMES[THEME_NEON if theme_key == THEME_NEON else theme_key]
+def build_dialog_panel(root_layout, margins, spacing):
+    panel = QFrame()
+    panel.setObjectName("dialogPanel")
+    panel_layout = QVBoxLayout(panel)
+    panel_layout.setContentsMargins(*margins)
+    panel_layout.setSpacing(spacing)
+    root_layout.addWidget(panel)
+    return panel, panel_layout
 
 
-def dialog_stylesheet(theme):
-    return f"""
-        QDialog {{
-            background-color: {theme['surface']};
-        }}
-        QLabel {{
-            color: {theme['text']};
-        }}
-        QFrame#dialogPanel {{
-            border: 1px solid {theme['border']};
-            border-radius: 16px;
-            background-color: {theme['surface']};
-        }}
-        QPushButton#dialogPrimaryButton {{
-            background-color: {theme['primary']};
-            color: #FFFFFF;
-            border: none;
-            border-radius: 10px;
-            font-weight: normal;
-            padding: 8px 18px;
-            min-height: 38px;
-            max-height: 38px;
-        }}
-        QLineEdit#commandPreview {{
-            border: 1px solid {theme['border']};
-            border-radius: 10px;
-            padding: 8px 12px;
-            background-color: {theme['surface_alt']};
-            color: {theme['text']};
-            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-            min-height: 24px;
-        }}
-        QPlainTextEdit#licenseText {{
-            border: 1px solid {theme['border']};
-            border-radius: 10px;
-            background-color: {theme['surface_alt']};
-            color: {theme['text']};
-            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-            font-size: 11px;
-            padding: 10px;
-        }}
-        QPlainTextEdit#logText {{
-            border: 1px solid {theme['border']};
-            border-radius: 10px;
-            background-color: {theme['surface_alt']};
-            color: {theme['text']};
-            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-            font-size: 11px;
-            padding: 10px;
-        }}
-    """
+def build_dialog_title_label(text, theme):
+    label = QLabel(text)
+    label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+    return label
+
+
+def build_dialog_body_label(text, theme):
+    label = QLabel(text)
+    label.setWordWrap(True)
+    label.setStyleSheet(f"font-size: 13px; color: {theme['muted_text']}; line-height: 1.4;")
+    return label
+
+
+def calculate_fill_height(window_height, root_layout, panel_layout, fixed_heights, explicit_spacing_height, min_height=520):
+    root_margins = root_layout.contentsMargins()
+    panel_margins = panel_layout.contentsMargins()
+    non_fill_height = (
+        root_margins.top()
+        + root_margins.bottom()
+        + panel_margins.top()
+        + panel_margins.bottom()
+        + sum(fixed_heights)
+        + explicit_spacing_height
+    )
+    return max(min_height, window_height - non_fill_height)
 
 
 def is_gui_supported_extension(file_path):
@@ -851,83 +529,6 @@ class FileInfoCard(QFrame):
         super().resizeEvent(event)
         self.update_filename_display()
 
-class AccordionHeader(QWidget):
-    toggled = Signal(bool)
-
-    def __init__(self, title, expanded=True, parent=None):
-        super().__init__(parent)
-        self.setCursor(Qt.PointingHandCursor)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self._expanded = expanded
-        self._title = title
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-
-        self.arrow_widget = QSvgWidget()
-        self.arrow_widget.setFixedSize(14, 14)
-
-        self.title_label = QLabel(title)
-        self._theme = THEMES[THEME_DARK]
-        self.title_label.setStyleSheet(f"color: {self._theme['text']}; font-size: 15px; font-weight: bold; letter-spacing: 0.4px;")
-
-        layout.addWidget(self.arrow_widget)
-        layout.addWidget(self.title_label)
-        layout.addStretch()
-        self.setExpanded(expanded)
-
-    def mousePressEvent(self, event):
-        self.setExpanded(not self._expanded)
-        self.toggled.emit(self._expanded)
-        super().mousePressEvent(event)
-
-    def setExpanded(self, expanded):
-        self._expanded = expanded
-        icon_name = "chevron-down.svg" if expanded else "chevron-right.svg"
-        load_svg_widget(self.arrow_widget, icon_name, self._theme["text"])
-
-    def setTitle(self, title):
-        self._title = title
-        self.title_label.setText(title)
-
-    def apply_theme(self, theme):
-        self._theme = theme
-        self.title_label.setStyleSheet(f"color: {theme['text']}; font-size: 15px; font-weight: bold; letter-spacing: 0.4px;")
-        self.setExpanded(self._expanded)
-
-
-class AccordionSection(QWidget):
-    toggled = Signal(bool)
-
-    def __init__(self, title, expanded=True, parent=None):
-        super().__init__(parent)
-        self.header = AccordionHeader(title, expanded=expanded)
-        self.header.toggled.connect(self._on_toggled)
-
-        self.content_widget = QWidget()
-        self.content_layout = QVBoxLayout(self.content_widget)
-        self.content_layout.setContentsMargins(0, 10, 0, 0)
-        self.content_layout.setSpacing(0)
-        self.content_widget.setVisible(expanded)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
-        layout.addWidget(self.header)
-        layout.addWidget(self.content_widget)
-
-    def _on_toggled(self, checked):
-        self.content_widget.setVisible(checked)
-        self.toggled.emit(checked)
-
-    def set_title(self, title):
-        self.header.setTitle(title)
-
-    def apply_theme(self, theme):
-        self.header.apply_theme(theme)
-
-
 class ClickableSvgWidget(QSvgWidget):
     def __init__(self, url=None, parent=None):
         super().__init__(parent)
@@ -1020,21 +621,14 @@ class DependencyWarningDialog(QDialog):
         self.setModal(True)
         self.setFixedWidth(460)
 
-        self.setStyleSheet(dialog_stylesheet(theme))
-
         missing_text = ", ".join(missing_dependencies)
 
+        self.setStyleSheet(dialog_stylesheet(theme))
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(16, 16, 16, 16)
+        _, panel_layout = build_dialog_panel(root_layout, (20, 20, 20, 20), 14)
 
-        panel = QFrame()
-        panel.setObjectName("dialogPanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(20, 20, 20, 20)
-        panel_layout.setSpacing(14)
-
-        title_label = QLabel("ffmpeg / ffprobe is required")
-        title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+        title_label = build_dialog_title_label("ffmpeg / ffprobe is required", theme)
 
         summary_label = QLabel(
             f"MediaSeg could not find: {missing_text}."
@@ -1042,12 +636,11 @@ class DependencyWarningDialog(QDialog):
         summary_label.setWordWrap(True)
         summary_label.setStyleSheet(f"font-size: 13px; color: {theme['text']};")
 
-        body_label = QLabel(
+        body_label = build_dialog_body_label(
             "This app uses the system ffmpeg toolchain for media conversion, duration checks, and splitting. "
-            "Install ffmpeg first, then restart MediaSeg."
+            "Install ffmpeg first, then restart MediaSeg.",
+            theme,
         )
-        body_label.setWordWrap(True)
-        body_label.setStyleSheet(f"font-size: 13px; color: {theme['muted_text']}; line-height: 1.4;")
 
         command_label = QLabel("Install on macOS with Homebrew")
         command_label.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {theme['text']};")
@@ -1074,17 +667,9 @@ class DependencyWarningDialog(QDialog):
         panel_layout.addSpacing(8)
         panel_layout.addLayout(button_row)
 
-        root_layout.addWidget(panel)
-
     def showEvent(self, event):
         super().showEvent(event)
-        parent = self.parentWidget()
-        if parent is None:
-            return
-        parent_center = parent.frameGeometry().center()
-        dialog_rect = self.frameGeometry()
-        dialog_rect.moveCenter(parent_center)
-        self.move(dialog_rect.topLeft())
+        center_window_to_parent(self, self.parentWidget())
 
 
 class InfoDialog(QDialog):
@@ -1094,19 +679,12 @@ class InfoDialog(QDialog):
         self.setModal(True)
         self.setFixedWidth(560)
 
-        self.setStyleSheet(dialog_stylesheet(theme))
-
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(16, 16, 16, 16)
+        self.setStyleSheet(dialog_stylesheet(theme))
+        _, panel_layout = build_dialog_panel(root_layout, (20, 20, 20, 20), 12)
 
-        panel = QFrame()
-        panel.setObjectName("dialogPanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(20, 20, 20, 20)
-        panel_layout.setSpacing(12)
-
-        title_label = QLabel(headline)
-        title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+        title_label = build_dialog_title_label(headline, theme)
         title_label.setWordWrap(True)
         panel_layout.addWidget(title_label)
 
@@ -1119,11 +697,9 @@ class InfoDialog(QDialog):
             section_title.setStyleSheet(f"font-size: 12px; font-weight: bold; color: {theme['text']};")
             section_layout.addWidget(section_title)
 
-            body_label = QLabel(section["body"])
-            body_label.setWordWrap(True)
+            body_label = build_dialog_body_label(section["body"], theme)
             body_label.setOpenExternalLinks(True)
             body_label.setTextFormat(Qt.RichText)
-            body_label.setStyleSheet(f"font-size: 13px; color: {theme['muted_text']}; line-height: 1.4;")
             section_layout.addWidget(body_label)
 
             command = section.get("command")
@@ -1145,17 +721,9 @@ class InfoDialog(QDialog):
         panel_layout.addSpacing(16)
         panel_layout.addLayout(button_row)
 
-        root_layout.addWidget(panel)
-
     def showEvent(self, event):
         super().showEvent(event)
-        parent = self.parentWidget()
-        if parent is None:
-            return
-        parent_center = parent.frameGeometry().center()
-        dialog_rect = self.frameGeometry()
-        dialog_rect.moveCenter(parent_center)
-        self.move(dialog_rect.topLeft())
+        center_window_to_parent(self, self.parentWidget())
 
 
 class SessionLogDialog(QDialog):
@@ -1165,39 +733,19 @@ class SessionLogDialog(QDialog):
         self.setWindowTitle(title)
         self.setModal(False)
         self.setFixedSize(560, 760)
-        self.setStyleSheet(dialog_stylesheet(theme))
-
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(8, 8, 8, 8)
-
-        panel = QFrame()
-        panel.setObjectName("dialogPanel")
-        panel_layout = QVBoxLayout(panel)
+        self.setStyleSheet(dialog_stylesheet(theme))
+        _, panel_layout = build_dialog_panel(root_layout, (12, 12, 12, 12), 0)
         panel_layout.setAlignment(Qt.AlignTop)
-        panel_layout.setContentsMargins(12, 12, 12, 12)
-        panel_layout.setSpacing(0)
 
-        self.title_label = QLabel(title)
-        self.title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+        self.title_label = build_dialog_title_label(title, theme)
 
         self.log_view = QPlainTextEdit()
         self.log_view.setObjectName("logText")
         self.log_view.setReadOnly(True)
         self.log_view.setPlaceholderText("Activity logs will display here...")
         self.log_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.log_view.setStyleSheet(f"""
-            QPlainTextEdit {{
-                border: 1px solid {theme['border']};
-                border-radius: 10px;
-                background-color: {theme['surface_alt']};
-                color: {theme['text']};
-                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
-                font-size: 11px;
-                padding: 10px;
-                min-height: 0px;
-                max-height: 16777215px;
-            }}
-        """)
 
         button_row = QHBoxLayout()
         button_row.addStretch()
@@ -1211,7 +759,6 @@ class SessionLogDialog(QDialog):
         panel_layout.addWidget(self.log_view)
         panel_layout.addSpacing(12)
         panel_layout.addLayout(button_row)
-        root_layout.addWidget(panel, 1)
         self._root_layout = root_layout
         self._panel_layout = panel_layout
         self._close_button = close_button
@@ -1238,13 +785,7 @@ class SessionLogDialog(QDialog):
     def showEvent(self, event):
         super().showEvent(event)
         self.recalculate_log_view_height()
-        parent = self.parentWidget()
-        if parent is None:
-            return
-        parent_center = parent.frameGeometry().center()
-        dialog_rect = self.frameGeometry()
-        dialog_rect.moveCenter(parent_center)
-        self.move(dialog_rect.topLeft())
+        center_window_to_parent(self, self.parentWidget())
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -1255,22 +796,18 @@ class SessionLogDialog(QDialog):
             return
         self.layout().activate()
         self._panel_layout.activate()
-        root_margins = self._root_layout.contentsMargins()
-        panel_margins = self._panel_layout.contentsMargins()
         title_height = self.title_label.sizeHint().height()
         button_height = self._close_button.sizeHint().height()
         explicit_spacing_height = 16 + 12
-        non_log_height = (
-            root_margins.top()
-            + root_margins.bottom()
-            + panel_margins.top()
-            + panel_margins.bottom()
-            + title_height
-            + button_height
-            + explicit_spacing_height
+        log_height = calculate_fill_height(
+            self.height(),
+            self._root_layout,
+            self._panel_layout,
+            [title_height, button_height],
+            explicit_spacing_height,
         )
-        log_height = max(520, self.height() - non_log_height)
         self.log_view.setFixedHeight(log_height)
+
 
 class ProcessingOverlay(QWidget):
     def __init__(self, parent=None):
@@ -1430,8 +967,6 @@ class MainWindow(QMainWindow):
         self.rotation_frame_index = 0
         self.loader_icon_cache = []
         self.loader_icon_cache_path = None
-        self.log_section = None
-        self.log_area = None
         self.session_log_button = None
         self.session_log_dialog = None
         self.log_messages = []
@@ -1461,10 +996,8 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(0, self.check_runtime_dependencies_on_startup)
 
     def resolve_theme_key(self, selected_theme):
-        if selected_theme != THEME_SYSTEM:
-            return selected_theme if selected_theme in THEMES else THEME_DARK
-        window_color = QApplication.palette().color(QPalette.Window)
-        return THEME_DARK if window_color.lightness() < 128 else THEME_LIGHT
+        window_lightness = QApplication.palette().window().color().lightness()
+        return resolve_theme_key(selected_theme, window_lightness)
 
     def resolve_language_key(self, selected_language):
         if selected_language == LANG_SYSTEM:
@@ -1487,6 +1020,51 @@ class MainWindow(QMainWindow):
         logo_width, logo_height = get_svg_scaled_size(logo_path, 112, 20)
         self.footer_logo_widget.setFixedSize(logo_width, logo_height)
         self.footer_logo_widget.load(str(logo_path))
+
+    def apply_config_panel_styles(self):
+        if hasattr(self, "config_title"):
+            self.config_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {self.theme['text']}; letter-spacing: 0.4px;")
+        if hasattr(self, "config_panel"):
+            self.config_panel.setStyleSheet(f"""
+                QFrame {{
+                    border: 1px solid {self.theme['border']};
+                    border-radius: 16px;
+                    background-color: {self.theme['surface']};
+                }}
+                QLabel {{
+                    border: none;
+                }}
+            """)
+        if hasattr(self, "target_size_lbl"):
+            self.target_size_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
+        if hasattr(self, "mb_label"):
+            self.mb_label.setStyleSheet(f"font-weight: normal; font-size: 14px; color: {self.theme['muted_text']};")
+        if hasattr(self, "size_warning_icon"):
+            self.size_warning_icon.setPixmap(make_svg_icon("circle-alert.svg", color=self.theme["warning"], size=14).pixmap(14, 14))
+        if hasattr(self, "size_warning_text"):
+            self.size_warning_text.setStyleSheet(f"font-size: 10px; color: {self.theme['warning']};")
+        if hasattr(self, "out_folder_lbl"):
+            self.out_folder_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
+        if hasattr(self, "out_folder_help"):
+            self.out_folder_help.setStyleSheet(f"font-size: 11px; color: {self.theme['muted_text']};")
+
+    def apply_main_action_styles(self):
+        if hasattr(self, "utility_button"):
+            utility_icon_color = self.theme["menu_trigger_fg"] if self.utility_button.isEnabled() else self.theme["menu_trigger_disabled_fg"]
+            self.utility_button.setIcon(make_svg_icon("settings.svg", color=utility_icon_color, size=18))
+        if hasattr(self, "browse_button"):
+            self.browse_button.setIcon(make_svg_icon("folder-input.svg", color=self.theme["button_secondary_text"], size=18))
+        if hasattr(self, "out_browse_button"):
+            self.out_browse_button.setIcon(make_svg_icon("folder-output.svg", color=self.theme["button_secondary_text"], size=18))
+        if hasattr(self, "open_folder_button"):
+            open_folder_icon_color = self.theme["open_button_text"] if self.open_folder_button.isEnabled() else self.theme["open_button_disabled_text"]
+            self.open_folder_button.setIcon(make_svg_icon("folder.svg", color=open_folder_icon_color, size=18))
+        if hasattr(self, "session_log_button") and self.session_log_button is not None:
+            self.session_log_button.setIcon(make_svg_icon("file-text.svg", color=self.theme["button_secondary_text"], size=18))
+        if hasattr(self, "footer_version_label") and self.footer_version_label is not None:
+            self.footer_version_label.setStyleSheet(f"font-size: 12px; font-weight: normal; color: {self.theme['footer_text']};")
+        if hasattr(self, "footer_logo_widget") and self.footer_logo_widget is not None:
+            self.refresh_footer_logo()
 
     def build_start_button_texts(self):
         self.start_button_texts = {
@@ -1518,7 +1096,7 @@ class MainWindow(QMainWindow):
 
         self.theme_action_group = QActionGroup(self)
         self.theme_action_group.setExclusive(True)
-        for theme_key in (THEME_SYSTEM, THEME_DARK, THEME_LIGHT, THEME_NEON):
+        for theme_key in THEME_KEYS:
             action = QAction(self)
             action.setCheckable(True)
             action.triggered.connect(lambda checked=False, key=theme_key: self.set_theme_preference(key))
@@ -1550,7 +1128,7 @@ class MainWindow(QMainWindow):
         self.theme_menu = QMenu(self.utility_menu)
         self.theme_menu.setStyle(InstantSubmenuStyle(self.theme_menu.style()))
         self.theme_menu.setMinimumWidth(180)
-        for theme_key in (THEME_SYSTEM, THEME_DARK, THEME_LIGHT, THEME_NEON):
+        for theme_key in THEME_KEYS:
             self.theme_menu.addAction(self.theme_actions[theme_key])
         self.utility_menu.addMenu(self.theme_menu)
 
@@ -1644,8 +1222,6 @@ class MainWindow(QMainWindow):
                 font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
                 font-size: 11px;
                 padding: 8px;
-                min-height: 80px;
-                max-height: 140px;
             }}
             QPushButton {{
                 border: none;
@@ -1813,53 +1389,12 @@ class MainWindow(QMainWindow):
             getattr(self, "drop_area", None),
             getattr(self, "file_info_card", None),
             getattr(self, "size_slider_ticks", None),
-            getattr(self, "log_section", None),
             getattr(self, "processing_overlay", None),
         ):
             if themed_widget is not None and hasattr(themed_widget, "apply_theme"):
                 themed_widget.apply_theme(self.theme)
-
-        if hasattr(self, "config_title"):
-            self.config_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {self.theme['text']}; letter-spacing: 0.4px;")
-        if hasattr(self, "config_panel"):
-            self.config_panel.setStyleSheet(f"""
-                QFrame {{
-                    border: 1px solid {self.theme['border']};
-                    border-radius: 16px;
-                    background-color: {self.theme['surface']};
-                }}
-                QLabel {{
-                    border: none;
-                }}
-            """)
-        if hasattr(self, "target_size_lbl"):
-            self.target_size_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
-        if hasattr(self, "mb_label"):
-            self.mb_label.setStyleSheet(f"font-weight: normal; font-size: 14px; color: {self.theme['muted_text']};")
-        if hasattr(self, "size_warning_icon"):
-            self.size_warning_icon.setPixmap(make_svg_icon("circle-alert.svg", color=self.theme["warning"], size=14).pixmap(14, 14))
-        if hasattr(self, "size_warning_text"):
-            self.size_warning_text.setStyleSheet(f"font-size: 10px; color: {self.theme['warning']};")
-        if hasattr(self, "out_folder_lbl"):
-            self.out_folder_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
-        if hasattr(self, "out_folder_help"):
-            self.out_folder_help.setStyleSheet(f"font-size: 11px; color: {self.theme['muted_text']};")
-        if hasattr(self, "utility_button"):
-            utility_icon_color = self.theme["menu_trigger_fg"] if self.utility_button.isEnabled() else self.theme["menu_trigger_disabled_fg"]
-            self.utility_button.setIcon(make_svg_icon("settings.svg", color=utility_icon_color, size=18))
-        if hasattr(self, "browse_button"):
-            self.browse_button.setIcon(make_svg_icon("folder-input.svg", color=self.theme["button_secondary_text"], size=18))
-        if hasattr(self, "out_browse_button"):
-            self.out_browse_button.setIcon(make_svg_icon("folder-output.svg", color=self.theme["button_secondary_text"], size=18))
-        if hasattr(self, "open_folder_button"):
-            open_folder_icon_color = self.theme["open_button_text"] if self.open_folder_button.isEnabled() else self.theme["open_button_disabled_text"]
-            self.open_folder_button.setIcon(make_svg_icon("folder.svg", color=open_folder_icon_color, size=18))
-        if hasattr(self, "session_log_button") and self.session_log_button is not None:
-            self.session_log_button.setIcon(make_svg_icon("file-text.svg", color=self.theme["button_secondary_text"], size=18))
-        if hasattr(self, "footer_version_label") and self.footer_version_label is not None:
-            self.footer_version_label.setStyleSheet(f"font-size: 12px; font-weight: normal; color: {self.theme['footer_text']};")
-        if hasattr(self, "footer_logo_widget") and self.footer_logo_widget is not None:
-            self.refresh_footer_logo()
+        self.apply_config_panel_styles()
+        self.apply_main_action_styles()
         if self.session_log_dialog is not None:
             self.session_log_dialog.set_theme(self.theme)
         self.set_start_button_state(self.start_button_state)
@@ -2091,24 +1626,18 @@ class MainWindow(QMainWindow):
         dialog.setModal(True)
         dialog.setFixedSize(560, 860)
 
-        dialog.setStyleSheet(dialog_stylesheet(self.theme))
-
         root_layout = QVBoxLayout(dialog)
         root_layout.setContentsMargins(6, 6, 6, 6)
+        dialog.setStyleSheet(dialog_stylesheet(self.theme))
+        _, panel_layout = build_dialog_panel(root_layout, (10, 10, 10, 10), 0)
 
-        panel = QFrame()
-        panel.setObjectName("dialogPanel")
-        panel_layout = QVBoxLayout(panel)
-        panel_layout.setContentsMargins(10, 10, 10, 10)
-        panel_layout.setSpacing(0)
-
-        title_label = QLabel("Third-Party Licenses")
-        title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {self.theme['text']};")
+        title_label = build_dialog_title_label("Third-Party Licenses", self.theme)
         title_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-        body_label = QLabel("Bundled third-party license and attribution notes for this release.")
-        body_label.setWordWrap(True)
-        body_label.setStyleSheet(f"font-size: 13px; color: {self.theme['muted_text']}; line-height: 1.4;")
+        body_label = build_dialog_body_label(
+            "Bundled third-party license and attribution notes for this release.",
+            self.theme,
+        )
         body_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
         license_view = QPlainTextEdit()
@@ -2133,30 +1662,20 @@ class MainWindow(QMainWindow):
         panel_layout.addSpacing(16)
         panel_layout.addLayout(button_row)
 
-        root_layout.addWidget(panel)
-
-        parent_center = self.frameGeometry().center()
-        dialog_rect = dialog.frameGeometry()
-        dialog_rect.moveCenter(parent_center)
-        dialog.move(dialog_rect.topLeft())
+        center_window_to_parent(dialog, self)
 
         dialog.layout().activate()
         panel_layout.activate()
-        root_margins = root_layout.contentsMargins()
-        panel_margins = panel_layout.contentsMargins()
         header_height = title_label.sizeHint().height() + body_label.sizeHint().height()
         button_height = close_button.sizeHint().height()
         explicit_spacing_height = 16 + 16 + 16
-        non_license_height = (
-            root_margins.top()
-            + root_margins.bottom()
-            + panel_margins.top()
-            + panel_margins.bottom()
-            + header_height
-            + button_height
-            + explicit_spacing_height
+        license_height = calculate_fill_height(
+            dialog.height(),
+            root_layout,
+            panel_layout,
+            [header_height, button_height],
+            explicit_spacing_height,
         )
-        license_height = max(520, dialog.height() - non_license_height)
         license_view.setFixedHeight(license_height)
 
         dialog.exec()
@@ -2288,22 +1807,11 @@ class MainWindow(QMainWindow):
 
         # 4. Configuration Panel
         self.config_title = QLabel("CONFIGURATION")
-        self.config_title.setStyleSheet(f"font-size: 15px; font-weight: bold; color: {self.theme['text']}; letter-spacing: 0.4px;")
         self.main_layout.addWidget(self.config_title)
 
         self.config_panel = QFrame()
         self.config_panel.setMinimumHeight(340)
         self.config_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.config_panel.setStyleSheet(f"""
-            QFrame {{
-                border: 1px solid {self.theme['border']};
-                border-radius: 16px;
-                background-color: {self.theme['surface']};
-            }}
-            QLabel {{
-                border: none;
-            }}
-        """)
         config_layout = QVBoxLayout(self.config_panel)
         config_layout.setContentsMargins(16, 16, 16, 16)
         config_layout.setSpacing(14)
@@ -2311,7 +1819,6 @@ class MainWindow(QMainWindow):
         # A. Target Chunk Size Line
         target_size_header = QHBoxLayout()
         self.target_size_lbl = QLabel("Target Chunk Size")
-        self.target_size_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
         
         self.size_edit = QLineEdit()
         self.size_edit.setObjectName("sizeEdit")
@@ -2323,7 +1830,6 @@ class MainWindow(QMainWindow):
         self.size_edit.textChanged.connect(self.on_lineedit_changed)
 
         self.mb_label = QLabel("MB")
-        self.mb_label.setStyleSheet(f"font-weight: normal; font-size: 14px; color: {self.theme['muted_text']};")
 
         size_input_row = QHBoxLayout()
         size_input_row.setContentsMargins(0, 0, 0, 0)
@@ -2336,7 +1842,6 @@ class MainWindow(QMainWindow):
         self.size_warning_icon.setPixmap(make_svg_icon("circle-alert.svg", color=self.theme["warning"], size=14).pixmap(14, 14))
         self.size_warning_text = QLabel("")
         self.size_warning_text.setWordWrap(False)
-        self.size_warning_text.setStyleSheet(f"font-size: 10px; color: {self.theme['warning']};")
 
         self.size_warning_row = QHBoxLayout()
         self.size_warning_row.setContentsMargins(0, 0, 0, 0)
@@ -2384,11 +1889,9 @@ class MainWindow(QMainWindow):
         # E. Output Folder layout (New 2-row structure)
         config_layout.addSpacing(10)
         self.out_folder_lbl = QLabel("Output Folder")
-        self.out_folder_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
         config_layout.addWidget(self.out_folder_lbl)
 
         self.out_folder_help = QLabel("Use Browse to choose a custom output folder.")
-        self.out_folder_help.setStyleSheet(f"font-size: 11px; color: {self.theme['muted_text']};")
         config_layout.addWidget(self.out_folder_help)
         
         self.output_path_edit = QLineEdit()
@@ -2418,6 +1921,7 @@ class MainWindow(QMainWindow):
         out_buttons_layout.addWidget(self.out_reset_button)
         config_layout.addLayout(out_buttons_layout)
 
+        self.apply_config_panel_styles()
         self.main_layout.addWidget(self.config_panel)
         self.config_panel.adjustSize()
         self.config_panel.setFixedHeight(self.config_panel.sizeHint().height())
@@ -2436,13 +1940,11 @@ class MainWindow(QMainWindow):
         self.open_folder_button.setObjectName("openFolderButton")
         self.open_folder_button.setEnabled(False)
         self.open_folder_button.clicked.connect(self.open_output_folder)
-        self.open_folder_button.setIcon(make_svg_icon("folder.svg", color="#F3F5F8", size=18))
         self.open_folder_button.setIconSize(QSize(18, 18))
 
         self.session_log_button = QPushButton(self.session_log_button_label())
         self.session_log_button.setObjectName("sessionLogButton")
         self.session_log_button.clicked.connect(self.show_session_log_dialog)
-        self.session_log_button.setIcon(make_svg_icon("file-text.svg", color=self.theme["button_secondary_text"], size=18))
         self.session_log_button.setIconSize(QSize(18, 18))
 
         secondary_action_row = QHBoxLayout()
@@ -2474,7 +1976,7 @@ class MainWindow(QMainWindow):
         self.utility_button.setFixedSize(36, 36)
         self.utility_button.setToolButtonStyle(Qt.ToolButtonIconOnly)
         self.build_utility_menu()
-        self.refresh_footer_logo()
+        self.apply_main_action_styles()
 
         footer_side_width = 136
         footer_left_cell = QWidget()
@@ -2894,8 +2396,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-class InstantSubmenuStyle(QProxyStyle):
-    def styleHint(self, hint, option=None, widget=None, returnData=None):
-        if hint == QStyle.SH_Menu_SubMenuPopupDelay:
-            return 0
-        return super().styleHint(hint, option, widget, returnData)
