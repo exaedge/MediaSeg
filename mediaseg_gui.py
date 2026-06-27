@@ -938,7 +938,10 @@ class MainWindow(QMainWindow):
         if not self.loader_icon_cache:
             return
         self.rotation_frame_index = (self.rotation_frame_index + 1) % len(self.loader_icon_cache)
-        self.start_button.setIcon(self.loader_icon_cache[self.rotation_frame_index])
+        current_icon = self.loader_icon_cache[self.rotation_frame_index]
+        self.start_button.setIcon(current_icon)
+        if hasattr(self, "processing_overlay") and self.processing_overlay is not None and self.processing_overlay.isVisible():
+            self.processing_overlay.set_spinner_icon(current_icon)
 
     def set_start_button_state(self, state):
         self.start_button_state = state
@@ -952,7 +955,10 @@ class MainWindow(QMainWindow):
                 self.build_loader_icon_cache(icon_path)
                 self.rotation_frame_index = 0
                 if self.loader_icon_cache:
-                    self.start_button.setIcon(self.loader_icon_cache[self.rotation_frame_index])
+                    current_icon = self.loader_icon_cache[self.rotation_frame_index]
+                    self.start_button.setIcon(current_icon)
+                    if hasattr(self, "processing_overlay") and self.processing_overlay is not None:
+                        self.processing_overlay.set_spinner_icon(current_icon)
                 if not self.rotation_timer.isActive():
                     self.rotation_timer.start()
             else:

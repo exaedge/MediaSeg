@@ -575,6 +575,9 @@ class ProcessingOverlay(QWidget):
         layout.addWidget(self.container, alignment=Qt.AlignCenter)
         self.apply_theme(self._theme)
 
+    def set_spinner_icon(self, icon):
+        self.icon_label.setPixmap(icon.pixmap(28, 28))
+
     def set_message(self, title, subtitle=None):
         self.title_label.setText(title)
         if subtitle is not None:
@@ -603,6 +606,10 @@ class ProcessingOverlay(QWidget):
                 background-color: {theme['overlay_card']};
                 border: 1px solid {theme['border']};
                 border-radius: 16px;
+            }}
+            QFrame QLabel {{
+                background-color: transparent;
+                border: none;
             }}
             """
         )
