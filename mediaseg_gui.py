@@ -3,7 +3,6 @@ import os
 import subprocess
 import math
 import time
-from pathlib import Path
 from mediaseg_version import get_public_version, get_build_version
 from dialogs import (
     DependencyWarningDialog,
@@ -15,8 +14,17 @@ from dialogs import (
     calculate_fill_height,
     center_window_to_parent,
 )
+from menu_helpers import (
+    build_utility_menu,
+    create_help_menu,
+    create_language_actions,
+    create_theme_actions,
+    create_utility_actions,
+    update_action_texts,
+)
 from themes import THEME_SYSTEM, THEME_DARK, THEME_LIGHT, THEME_NEON, THEME_KEYS, THEMES, resolve_theme_key, theme_display_tokens, dialog_stylesheet
 from ui_strings import LANG_SYSTEM, LANG_EN, LANG_JA, LANG_VI, build_strings, system_language_code
+from workers import DurationWorker, Worker
 from widgets import (
     EXAEDGE_ABOUT_URL,
     EXAEDGE_FOOTER_URL,
@@ -42,8 +50,8 @@ from widgets import (
     recolor_svg_bytes,
     supported_file_dialog_filter,
 )
-from PySide6.QtCore import QEvent, QThread, Signal, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl, QSettings
-from PySide6.QtGui import QAction, QActionGroup, QDesktopServices, QIntValidator, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QEvent, Slot, Qt, QSize, QTimer, QRectF, QByteArray, QUrl, QSettings
+from PySide6.QtGui import QDesktopServices, QIntValidator, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QApplication,
@@ -59,65 +67,13 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QSizePolicy,
-    QStyle,
     QToolButton,
     QDialog,
-    QMenu,
-    QProxyStyle,
 )
-
-class InstantSubmenuStyle(QProxyStyle):
-    def styleHint(self, hint, option=None, widget=None, returnData=None):
-        if hint == QStyle.SH_Menu_SubMenuPopupDelay:
-            return 0
-        return super().styleHint(hint, option, widget, returnData)
 
 SUPPORT_FEEDBACK_URL = "https://github.com/exaedge/MediaSeg/issues"
 GITHUB_REPO_URL = "https://github.com/exaedge/MediaSeg"
 STRINGS = build_strings(MIN_RELIABLE_CHUNK_SIZE_MB)
-
-class DurationWorker(QThread):
-    duration_signal = Signal(str, float)
-    error_signal = Signal(str)
-
-    def __init__(self, file_path):
-        super().__init__()
-        self.file_path = file_path
-
-    def run(self):
-        try:
-            from mediaseg_core import get_duration
-            duration = get_duration(Path(self.file_path))
-            self.duration_signal.emit(self.file_path, duration)
-        except Exception:
-            self.error_signal.emit(self.file_path)
-
-class Worker(QThread):
-    log_signal = Signal(str)
-    finished_signal = Signal(str)
-    error_signal = Signal(str)
-
-    def __init__(self, input_file, max_size_mb, output_dir=None):
-        super().__init__()
-        self.input_file = input_file
-        self.max_size_mb = max_size_mb
-        self.output_dir = output_dir
-
-    def run(self):
-        try:
-            from mediaseg_core import split_media
-
-            input_file_path = Path(self.input_file).resolve()
-
-            outdir_path = split_media(
-                input_file=str(input_file_path),
-                max_size_mb=self.max_size_mb,
-                logger=self.log_signal.emit,
-                output_dir=self.output_dir
-            )
-            self.finished_signal.emit(str(outdir_path))
-        except Exception as e:
-            self.error_signal.emit(str(e))
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -273,71 +229,33 @@ class MainWindow(QMainWindow):
         }
 
     def create_actions(self):
-        self.utility_actions["how_to_use"] = QAction(self)
-        self.utility_actions["how_to_use"].triggered.connect(self.show_how_to_use_dialog)
-        self.utility_actions["setup_ffmpeg"] = QAction(self)
-        self.utility_actions["setup_ffmpeg"].triggered.connect(self.show_setup_help_dialog)
-        self.utility_actions["common_issues"] = QAction(self)
-        self.utility_actions["common_issues"].triggered.connect(self.show_common_issues_dialog)
-        self.utility_actions["licenses"] = QAction(self)
-        self.utility_actions["licenses"].triggered.connect(self.show_third_party_licenses_dialog)
-        self.utility_actions["about"] = QAction(self)
-        self.utility_actions["about"].setMenuRole(QAction.MenuRole.AboutRole)
-        self.utility_actions["about"].triggered.connect(self.show_about_dialog)
-        self.utility_actions["support_feedback"] = QAction(self)
-        self.utility_actions["support_feedback"].triggered.connect(
-            lambda: QDesktopServices.openUrl(QUrl(SUPPORT_FEEDBACK_URL))
+        self.utility_actions = create_utility_actions(
+            self,
+            {
+                "how_to_use": self.show_how_to_use_dialog,
+                "setup_ffmpeg": self.show_setup_help_dialog,
+                "common_issues": self.show_common_issues_dialog,
+                "licenses": self.show_third_party_licenses_dialog,
+                "about": self.show_about_dialog,
+                "support_feedback": lambda: QDesktopServices.openUrl(QUrl(SUPPORT_FEEDBACK_URL)),
+            },
         )
-
-        self.theme_action_group = QActionGroup(self)
-        self.theme_action_group.setExclusive(True)
-        for theme_key in THEME_KEYS:
-            action = QAction(self)
-            action.setCheckable(True)
-            action.triggered.connect(lambda checked=False, key=theme_key: self.set_theme_preference(key))
-            self.theme_action_group.addAction(action)
-            self.theme_actions[theme_key] = action
-
-        self.language_action_group = QActionGroup(self)
-        self.language_action_group.setExclusive(True)
-        for language_key in (LANG_SYSTEM, LANG_EN, LANG_JA, LANG_VI):
-            action = QAction(self)
-            action.setCheckable(True)
-            action.triggered.connect(lambda checked=False, key=language_key: self.set_language_preference(key))
-            self.language_action_group.addAction(action)
-            self.language_actions[language_key] = action
-
-        self.create_help_menu()
+        self.theme_action_group, self.theme_actions = create_theme_actions(self, self.set_theme_preference)
+        self.language_action_group, self.language_actions = create_language_actions(self, self.set_language_preference)
+        self.help_menu = create_help_menu(self.menuBar(), self.utility_actions)
         self.update_action_texts()
 
     def create_help_menu(self):
-        self.help_menu = self.menuBar().addMenu("Help")
-        self.help_menu.clear()
-        for key in ("how_to_use", "setup_ffmpeg", "common_issues", "licenses", "support_feedback", "about"):
-            self.help_menu.addAction(self.utility_actions[key])
+        self.help_menu = create_help_menu(self.menuBar(), self.utility_actions)
 
     def build_utility_menu(self):
-        self.utility_menu = QMenu(self)
-        self.utility_menu.setStyle(InstantSubmenuStyle(self.utility_menu.style()))
-        self.utility_menu.setMinimumWidth(250)
-        self.theme_menu = QMenu(self.utility_menu)
-        self.theme_menu.setStyle(InstantSubmenuStyle(self.theme_menu.style()))
-        self.theme_menu.setMinimumWidth(180)
-        for theme_key in THEME_KEYS:
-            self.theme_menu.addAction(self.theme_actions[theme_key])
-        self.utility_menu.addMenu(self.theme_menu)
-
-        self.language_menu = QMenu(self.utility_menu)
-        self.language_menu.setStyle(InstantSubmenuStyle(self.language_menu.style()))
-        self.language_menu.setMinimumWidth(180)
-        for language_key in (LANG_SYSTEM, LANG_EN, LANG_JA, LANG_VI):
-            self.language_menu.addAction(self.language_actions[language_key])
-        self.utility_menu.addMenu(self.language_menu)
-        self.utility_menu.addSeparator()
-        for key in ("support_feedback", "how_to_use", "setup_ffmpeg", "common_issues", "licenses", "about"):
-            self.utility_menu.addAction(self.utility_actions[key])
-
-        self.utility_button.setMenu(self.utility_menu)
+        self.utility_menu, self.theme_menu, self.language_menu = build_utility_menu(
+            self,
+            self.utility_button,
+            self.theme_actions,
+            self.language_actions,
+            self.utility_actions,
+        )
         self.update_action_texts()
 
     def showEvent(self, event):
@@ -542,39 +460,17 @@ class MainWindow(QMainWindow):
         """)
 
     def update_action_texts(self):
-        if self.help_menu is not None:
-            self.help_menu.setTitle("Help")
-        if self.theme_menu is not None:
-            self.theme_menu.setTitle(self.t("menu_theme"))
-        if self.language_menu is not None:
-            self.language_menu.setTitle(self.t("menu_language"))
-
-        self.utility_actions["support_feedback"].setText(self.t("menu_support_feedback"))
-        self.utility_actions["how_to_use"].setText(self.t("menu_how_to_use"))
-        self.utility_actions["setup_ffmpeg"].setText(self.t("menu_setup_ffmpeg"))
-        self.utility_actions["common_issues"].setText(self.t("menu_common_issues"))
-        self.utility_actions["licenses"].setText(self.t("menu_licenses"))
-        self.utility_actions["about"].setText(self.t("menu_about"))
-
-        theme_labels = {
-            THEME_SYSTEM: self.t("theme_system"),
-            THEME_DARK: self.t("theme_dark"),
-            THEME_LIGHT: self.t("theme_light"),
-            THEME_NEON: self.t("theme_neon"),
-        }
-        for key, action in self.theme_actions.items():
-            action.setText(theme_labels[key])
-            action.setChecked(self.selected_theme == key)
-
-        language_labels = {
-            LANG_SYSTEM: self.t("lang_system"),
-            LANG_EN: self.t("lang_english"),
-            LANG_JA: self.t("lang_japanese"),
-            LANG_VI: self.t("lang_vietnamese"),
-        }
-        for key, action in self.language_actions.items():
-            action.setText(language_labels[key])
-            action.setChecked(self.selected_language == key)
+        update_action_texts(
+            self.t,
+            self.selected_theme,
+            self.selected_language,
+            self.help_menu,
+            self.theme_menu,
+            self.language_menu,
+            self.utility_actions,
+            self.theme_actions,
+            self.language_actions,
+        )
 
     def apply_theme(self):
         self.current_theme_key = self.resolve_theme_key(self.selected_theme)
