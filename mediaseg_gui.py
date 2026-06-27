@@ -3,6 +3,7 @@ import os
 import subprocess
 import math
 import time
+from pathlib import Path
 from mediaseg_version import get_public_version, get_build_version
 from dialogs import (
     DependencyWarningDialog,
