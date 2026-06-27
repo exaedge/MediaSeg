@@ -70,6 +70,7 @@ OFFICIALLY_SUPPORTED_EXTENSIONS = (".mp4", ".webm", ".mov")
 EXPERIMENTAL_SUPPORTED_EXTENSIONS = (".m4a", ".mp3", ".wav")
 GUI_ACCEPTED_EXTENSIONS = OFFICIALLY_SUPPORTED_EXTENSIONS + EXPERIMENTAL_SUPPORTED_EXTENSIONS
 SUPPORT_FEEDBACK_URL = "https://github.com/exaedge/MediaSeg/issues"
+GITHUB_REPO_URL = "https://github.com/exaedge/MediaSeg"
 STRINGS = build_strings(MIN_RELIABLE_CHUNK_SIZE_MB)
 
 
@@ -1544,7 +1545,12 @@ class MainWindow(QMainWindow):
             },
             {
                 "title": "Developer",
-                "body": f'<a href="{EXAEDGE_ABOUT_URL}" style="color:#8FB3FF; text-decoration:none;">ExaEdge</a> - Delivering practical AI solutions for businesses and digital creators.',
+                "body": (
+                    f'<a href="{EXAEDGE_ABOUT_URL}" style="color:#8FB3FF; text-decoration:none;">ExaEdge</a> '
+                    '- Delivering practical AI solutions for businesses and digital creators.<br><br>'
+                    f'<a href="{GITHUB_REPO_URL}" style="color:#8FB3FF; text-decoration:none;">GitHub Repository</a> '
+                    '- Source code, releases, and issue tracking.'
+                ),
             },
         ]
         InfoDialog("About MediaSeg", "About MediaSeg", sections, self.theme, self).exec()
