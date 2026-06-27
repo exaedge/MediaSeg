@@ -324,8 +324,8 @@ STRINGS = {
         "menu_button": "Tùy chọn",
         "menu_theme": "Giao diện",
         "menu_language": "Ngôn ngữ",
-        "menu_support_feedback": "Hỗ trợ & phản hồi",
-        "menu_how_to_use": "Cách dùng",
+        "menu_support_feedback": "Hỗ trợ & Phản hồi",
+        "menu_how_to_use": "Hướng dẫn sử dụng",
         "menu_setup_ffmpeg": "Thiết lập ffmpeg",
         "menu_common_issues": "Sự cố thường gặp",
         "menu_licenses": "Giấy phép bên thứ ba",
@@ -338,18 +338,18 @@ STRINGS = {
         "lang_english": "Tiếng Anh",
         "lang_japanese": "Tiếng Nhật",
         "lang_vietnamese": "Tiếng Việt",
-        "drop_title": "Thả tệp để chia nhỏ",
+        "drop_title": "Thả tệp vào đây để chia nhỏ",
         "drop_subtitle": "Chính thức: MP4, WEBM, MOV | Thử nghiệm: M4A, MP3, WAV",
-        "path_placeholder": "Hoặc nhập đường dẫn thủ công...",
-        "browse": "Chọn",
+        "path_placeholder": "Hoặc chọn đường dẫn...",
+        "browse": "Duyệt...",
         "config_title": "CẤU HÌNH",
-        "chunk_size": "Kích thước chunk mục tiêu",
+        "chunk_size": "Kích thước mỗi phần",
         "output_folder": "Thư mục đầu ra",
-        "output_folder_help": "Dùng Chọn để đặt thư mục đầu ra tùy chỉnh.",
-        "output_folder_placeholder": "Mặc định là cùng thư mục với nguồn. Dùng Chọn để thay đổi.",
+        "output_folder_help": "Nhấn \"Duyệt...\" để chọn thư mục đầu ra.",
+        "output_folder_placeholder": "Mặc định sẽ lưu cùng thư mục với tệp gốc. Nhấn \"Duyệt...\" để thay đổi.",
         "reset": "Đặt lại",
         "session_log": "NHẬT KÝ PHIÊN",
-        "start_idle": "\u00A0\u00A0Bắt đầu chia",
+        "start_idle": "\u00A0\u00A0Bắt đầu chia tệp",
         "start_preparing": "\u00A0\u00A0Đang chuẩn bị...",
         "start_converting": "\u00A0\u00A0Đang chuyển đổi...",
         "start_splitting": "\u00A0\u00A0Đang chia...",
@@ -361,7 +361,7 @@ STRINGS = {
         "fileinfo_format": "Định dạng",
         "fileinfo_size": "Kích thước gốc",
         "fileinfo_duration": "Thời lượng",
-        "fileinfo_chunks": "Số phần ước tính",
+        "fileinfo_chunks": "Số phần dự kiến",
         "size_warning_below_reliable": f"Dưới {MIN_RELIABLE_CHUNK_SIZE_MB} MB, một số tệp có thể thất bại.",
         "overlay_preparing_title": "Đang chuẩn bị",
         "overlay_preparing_body": "MediaSeg đang chuẩn bị tệp hiện tại. Các điều khiển tạm thời bị khóa.",
@@ -406,7 +406,7 @@ def dialog_stylesheet(theme):
             color: #FFFFFF;
             border: none;
             border-radius: 10px;
-            font-weight: bold;
+            font-weight: normal;
             padding: 8px 18px;
             min-height: 38px;
             max-height: 38px;
@@ -421,6 +421,15 @@ def dialog_stylesheet(theme):
             min-height: 24px;
         }}
         QPlainTextEdit#licenseText {{
+            border: 1px solid {theme['border']};
+            border-radius: 10px;
+            background-color: {theme['surface_alt']};
+            color: {theme['text']};
+            font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+            font-size: 11px;
+            padding: 10px;
+        }}
+        QPlainTextEdit#logText {{
             border: 1px solid {theme['border']};
             border-radius: 10px;
             background-color: {theme['surface_alt']};
@@ -745,7 +754,7 @@ class FileInfoCard(QFrame):
         self.format_lbl = QLabel("Format")
         self.format_lbl.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 11px;")
         self.format_val = QLabel("--")
-        self.format_val.setStyleSheet(f"font-weight: bold; color: {self._theme['text']}; font-size: 11px;")
+        self.format_val.setStyleSheet(f"font-weight: normal; color: {self._theme['text']}; font-size: 11px;")
         self.format_row.addWidget(self.format_lbl)
         self.format_row.addStretch()
         self.format_row.addWidget(self.format_val)
@@ -754,7 +763,7 @@ class FileInfoCard(QFrame):
         self.size_lbl = QLabel("Original Size")
         self.size_lbl.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 11px;")
         self.size_val = QLabel("--")
-        self.size_val.setStyleSheet(f"font-weight: bold; color: {self._theme['text']}; font-size: 11px;")
+        self.size_val.setStyleSheet(f"font-weight: normal; color: {self._theme['text']}; font-size: 11px;")
         self.size_row.addWidget(self.size_lbl)
         self.size_row.addStretch()
         self.size_row.addWidget(self.size_val)
@@ -763,7 +772,7 @@ class FileInfoCard(QFrame):
         self.dur_lbl = QLabel("Duration")
         self.dur_lbl.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 11px;")
         self.dur_val = QLabel("--:--:--")
-        self.dur_val.setStyleSheet(f"font-weight: bold; color: {self._theme['text']}; font-size: 11px;")
+        self.dur_val.setStyleSheet(f"font-weight: normal; color: {self._theme['text']}; font-size: 11px;")
         self.dur_row.addWidget(self.dur_lbl)
         self.dur_row.addStretch()
         self.dur_row.addWidget(self.dur_val)
@@ -772,7 +781,7 @@ class FileInfoCard(QFrame):
         self.chunks_lbl = QLabel("Estimated Chunks")
         self.chunks_lbl.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 11px;")
         self.chunks_val = QLabel("--")
-        self.chunks_val.setStyleSheet(f"font-weight: bold; color: {self._theme['link']}; font-size: 11px;")
+        self.chunks_val.setStyleSheet(f"font-weight: normal; color: {self._theme['link']}; font-size: 11px;")
         self.chunks_row.addWidget(self.chunks_lbl)
         self.chunks_row.addStretch()
         self.chunks_row.addWidget(self.chunks_val)
@@ -802,10 +811,10 @@ class FileInfoCard(QFrame):
             self.name_label.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {theme['text']}; line-height: 1.2;")
             for label in (self.format_lbl, self.size_lbl, self.dur_lbl, self.chunks_lbl):
                 label.setStyleSheet(f"color: {theme['muted_text']}; font-size: 11px;")
-            self.format_val.setStyleSheet(f"font-weight: bold; color: {theme['text']}; font-size: 11px;")
-            self.size_val.setStyleSheet(f"font-weight: bold; color: {theme['text']}; font-size: 11px;")
-            self.dur_val.setStyleSheet(f"font-weight: bold; color: {theme['text']}; font-size: 11px;")
-            self.chunks_val.setStyleSheet(f"font-weight: bold; color: {theme['link']}; font-size: 11px;")
+            self.format_val.setStyleSheet(f"font-weight: normal; color: {theme['text']}; font-size: 11px;")
+            self.size_val.setStyleSheet(f"font-weight: normal; color: {theme['text']}; font-size: 11px;")
+            self.dur_val.setStyleSheet(f"font-weight: normal; color: {theme['text']}; font-size: 11px;")
+            self.chunks_val.setStyleSheet(f"font-weight: normal; color: {theme['link']}; font-size: 11px;")
 
     def set_ui_texts(self, texts):
         self.format_lbl.setText(texts["fileinfo_format"])
@@ -946,7 +955,7 @@ class SliderTicksWidget(QWidget):
 
         for value, text in tick_values:
             label = QLabel(text, self)
-            label.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 10px; font-weight: 500;")
+            label.setStyleSheet(f"color: {self._theme['muted_text']}; font-size: 10px; font-weight: normal;")
             label.adjustSize()
             self.tick_labels.append((value, label))
 
@@ -1001,7 +1010,7 @@ class SliderTicksWidget(QWidget):
     def apply_theme(self, theme):
         self._theme = theme
         for _, label in self.tick_labels:
-            label.setStyleSheet(f"color: {theme['muted_text']}; font-size: 10px; font-weight: 500;")
+            label.setStyleSheet(f"color: {theme['muted_text']}; font-size: 10px; font-weight: normal;")
 
 
 class DependencyWarningDialog(QDialog):
@@ -1147,6 +1156,121 @@ class InfoDialog(QDialog):
         dialog_rect = self.frameGeometry()
         dialog_rect.moveCenter(parent_center)
         self.move(dialog_rect.topLeft())
+
+
+class SessionLogDialog(QDialog):
+    def __init__(self, title, theme, parent=None):
+        super().__init__(parent)
+        self._theme = theme
+        self.setWindowTitle(title)
+        self.setModal(False)
+        self.setFixedSize(560, 760)
+        self.setStyleSheet(dialog_stylesheet(theme))
+
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(8, 8, 8, 8)
+
+        panel = QFrame()
+        panel.setObjectName("dialogPanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setAlignment(Qt.AlignTop)
+        panel_layout.setContentsMargins(12, 12, 12, 12)
+        panel_layout.setSpacing(0)
+
+        self.title_label = QLabel(title)
+        self.title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+
+        self.log_view = QPlainTextEdit()
+        self.log_view.setObjectName("logText")
+        self.log_view.setReadOnly(True)
+        self.log_view.setPlaceholderText("Activity logs will display here...")
+        self.log_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.log_view.setStyleSheet(f"""
+            QPlainTextEdit {{
+                border: 1px solid {theme['border']};
+                border-radius: 10px;
+                background-color: {theme['surface_alt']};
+                color: {theme['text']};
+                font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+                font-size: 11px;
+                padding: 10px;
+                min-height: 0px;
+                max-height: 16777215px;
+            }}
+        """)
+
+        button_row = QHBoxLayout()
+        button_row.addStretch()
+        close_button = QPushButton("Close")
+        close_button.setObjectName("dialogPrimaryButton")
+        close_button.clicked.connect(self.close)
+        button_row.addWidget(close_button)
+
+        panel_layout.addWidget(self.title_label)
+        panel_layout.addSpacing(16)
+        panel_layout.addWidget(self.log_view)
+        panel_layout.addSpacing(12)
+        panel_layout.addLayout(button_row)
+        root_layout.addWidget(panel, 1)
+        self._root_layout = root_layout
+        self._panel_layout = panel_layout
+        self._close_button = close_button
+        self.recalculate_log_view_height()
+
+    def set_theme(self, theme):
+        self._theme = theme
+        self.setStyleSheet(dialog_stylesheet(theme))
+        self.title_label.setStyleSheet(f"font-size: 18px; font-weight: bold; color: {theme['text']};")
+        self.recalculate_log_view_height()
+
+    def set_title(self, title):
+        self.setWindowTitle(title)
+        self.title_label.setText(title)
+
+    def set_log_text(self, text):
+        self.log_view.setPlainText(text)
+        self.log_view.verticalScrollBar().setValue(self.log_view.verticalScrollBar().maximum())
+
+    def append_log_line(self, message):
+        self.log_view.appendPlainText(message)
+        self.log_view.ensureCursorVisible()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.recalculate_log_view_height()
+        parent = self.parentWidget()
+        if parent is None:
+            return
+        parent_center = parent.frameGeometry().center()
+        dialog_rect = self.frameGeometry()
+        dialog_rect.moveCenter(parent_center)
+        self.move(dialog_rect.topLeft())
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.recalculate_log_view_height()
+
+    def recalculate_log_view_height(self):
+        if not hasattr(self, "_root_layout"):
+            return
+        self.layout().activate()
+        self._panel_layout.activate()
+        root_margins = self._root_layout.contentsMargins()
+        panel_margins = self._panel_layout.contentsMargins()
+        title_height = self.title_label.sizeHint().height()
+        button_height = self._close_button.sizeHint().height()
+        explicit_spacing_height = 16 + 12
+        non_log_height = (
+            root_margins.top()
+            + root_margins.bottom()
+            + panel_margins.top()
+            + panel_margins.bottom()
+            + title_height
+            + button_height
+            + explicit_spacing_height
+        )
+        log_height = max(520, self.height() - non_log_height)
+        self.log_view.setFixedHeight(log_height)
 
 class ProcessingOverlay(QWidget):
     def __init__(self, parent=None):
@@ -1307,6 +1431,10 @@ class MainWindow(QMainWindow):
         self.loader_icon_cache = []
         self.loader_icon_cache_path = None
         self.log_section = None
+        self.log_area = None
+        self.session_log_button = None
+        self.session_log_dialog = None
+        self.log_messages = []
         self.start_cooldown_deadline = 0.0
         self.missing_dependencies = []
         self._last_logged_missing_dependencies = None
@@ -1478,7 +1606,7 @@ class MainWindow(QMainWindow):
                 padding: 6px 10px;
                 background-color: {theme['surface']};
                 font-size: 14px;
-                font-weight: bold;
+                font-weight: normal;
                 color: {theme['text']};
                 min-height: 40px;
                 max-height: 40px;
@@ -1522,7 +1650,7 @@ class MainWindow(QMainWindow):
             QPushButton {{
                 border: none;
                 border-radius: 8px;
-                font-weight: bold;
+                font-weight: normal;
                 padding: 10px 14px;
                 min-height: 40px;
                 max-height: 40px;
@@ -1581,6 +1709,14 @@ class MainWindow(QMainWindow):
                 color: {theme['open_button_text']};
                 border: 1px solid transparent;
                 font-size: 14px;
+                padding: 10px 16px;
+            }}
+            QPushButton#sessionLogButton {{
+                background-color: {theme['button_secondary_bg']};
+                color: {theme['button_secondary_text']};
+                border: 1px solid transparent;
+                font-size: 13px;
+                font-weight: normal;
                 padding: 10px 16px;
             }}
             QPushButton#openFolderButton:disabled {{
@@ -1699,7 +1835,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "target_size_lbl"):
             self.target_size_lbl.setStyleSheet(f"font-weight: bold; font-size: 13px; color: {self.theme['text']};")
         if hasattr(self, "mb_label"):
-            self.mb_label.setStyleSheet(f"font-weight: bold; font-size: 12px; color: {self.theme['muted_text']};")
+            self.mb_label.setStyleSheet(f"font-weight: normal; font-size: 14px; color: {self.theme['muted_text']};")
         if hasattr(self, "size_warning_icon"):
             self.size_warning_icon.setPixmap(make_svg_icon("circle-alert.svg", color=self.theme["warning"], size=14).pixmap(14, 14))
         if hasattr(self, "size_warning_text"):
@@ -1718,10 +1854,14 @@ class MainWindow(QMainWindow):
         if hasattr(self, "open_folder_button"):
             open_folder_icon_color = self.theme["open_button_text"] if self.open_folder_button.isEnabled() else self.theme["open_button_disabled_text"]
             self.open_folder_button.setIcon(make_svg_icon("folder.svg", color=open_folder_icon_color, size=18))
+        if hasattr(self, "session_log_button") and self.session_log_button is not None:
+            self.session_log_button.setIcon(make_svg_icon("file-text.svg", color=self.theme["button_secondary_text"], size=18))
         if hasattr(self, "footer_version_label") and self.footer_version_label is not None:
-            self.footer_version_label.setStyleSheet(f"font-size: 12px; font-weight: 600; color: {self.theme['footer_text']};")
+            self.footer_version_label.setStyleSheet(f"font-size: 12px; font-weight: normal; color: {self.theme['footer_text']};")
         if hasattr(self, "footer_logo_widget") and self.footer_logo_widget is not None:
             self.refresh_footer_logo()
+        if self.session_log_dialog is not None:
+            self.session_log_dialog.set_theme(self.theme)
         self.set_start_button_state(self.start_button_state)
         self.update_action_texts()
 
@@ -1751,10 +1891,12 @@ class MainWindow(QMainWindow):
             self.out_browse_button.setText(f"\u00A0\u00A0{self.t('browse')}")
         if hasattr(self, "out_reset_button"):
             self.out_reset_button.setText(self.t("reset"))
-        if hasattr(self, "log_section"):
-            self.log_section.set_title(self.t("session_log"))
         if hasattr(self, "open_folder_button"):
             self.open_folder_button.setText(self.t("open_output"))
+        if hasattr(self, "session_log_button") and self.session_log_button is not None:
+            self.session_log_button.setText(self.session_log_button_label())
+        if self.session_log_dialog is not None:
+            self.session_log_dialog.set_title(self.session_log_window_title())
         if hasattr(self, "file_info_card"):
             self.file_info_card.set_ui_texts(STRINGS[self.current_language_key])
         self.update_processing_overlay()
@@ -1802,8 +1944,9 @@ class MainWindow(QMainWindow):
         )
 
     def append_info(self, message):
-        self.log_area.appendPlainText(message)
-        self.log_area.ensureCursorVisible()
+        self.log_messages.append(message)
+        if self.session_log_dialog is not None:
+            self.session_log_dialog.append_log_line(message)
 
     def append_warning(self, message):
         self.append_info(f"Warning: {message}")
@@ -1813,6 +1956,25 @@ class MainWindow(QMainWindow):
 
     def append_success(self, message):
         self.append_info(f"Success: {message}")
+
+    def current_log_text(self):
+        return "\n".join(self.log_messages)
+
+    def session_log_button_label(self):
+        return "LOG"
+
+    def session_log_window_title(self):
+        return "Log"
+
+    def show_session_log_dialog(self):
+        if self.session_log_dialog is None:
+            self.session_log_dialog = SessionLogDialog(self.session_log_window_title(), self.theme, self)
+        self.session_log_dialog.set_title(self.session_log_window_title())
+        self.session_log_dialog.set_theme(self.theme)
+        self.session_log_dialog.set_log_text(self.current_log_text())
+        self.session_log_dialog.show()
+        self.session_log_dialog.raise_()
+        self.session_log_dialog.activateWindow()
 
     def show_dependency_warning_dialog(self):
         if not self.missing_dependencies:
@@ -1927,7 +2089,7 @@ class MainWindow(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle("Third-Party Licenses")
         dialog.setModal(True)
-        dialog.setFixedSize(540, 860)
+        dialog.setFixedSize(560, 860)
 
         dialog.setStyleSheet(dialog_stylesheet(self.theme))
 
@@ -1973,6 +2135,11 @@ class MainWindow(QMainWindow):
 
         root_layout.addWidget(panel)
 
+        parent_center = self.frameGeometry().center()
+        dialog_rect = dialog.frameGeometry()
+        dialog_rect.moveCenter(parent_center)
+        dialog.move(dialog_rect.topLeft())
+
         dialog.layout().activate()
         panel_layout.activate()
         root_margins = root_layout.contentsMargins()
@@ -2000,7 +2167,7 @@ class MainWindow(QMainWindow):
 
         if self.missing_dependencies:
             current_missing = tuple(self.missing_dependencies)
-            if self.log_area is not None and current_missing != self._last_logged_missing_dependencies:
+            if current_missing != self._last_logged_missing_dependencies:
                 self.append_warning(
                     f"Missing dependency: {', '.join(self.missing_dependencies)} not available. "
                     "For source runs, install ffmpeg and restart MediaSeg."
@@ -2156,7 +2323,7 @@ class MainWindow(QMainWindow):
         self.size_edit.textChanged.connect(self.on_lineedit_changed)
 
         self.mb_label = QLabel("MB")
-        self.mb_label.setStyleSheet(f"font-weight: bold; font-size: 12px; color: {self.theme['muted_text']};")
+        self.mb_label.setStyleSheet(f"font-weight: normal; font-size: 14px; color: {self.theme['muted_text']};")
 
         size_input_row = QHBoxLayout()
         size_input_row.setContentsMargins(0, 0, 0, 0)
@@ -2255,18 +2422,7 @@ class MainWindow(QMainWindow):
         self.config_panel.adjustSize()
         self.config_panel.setFixedHeight(self.config_panel.sizeHint().height())
 
-        # 5. Session Log Area
-        self.log_section = AccordionSection("SESSION LOG", expanded=False)
-        self.log_section.toggled.connect(lambda _: QTimer.singleShot(0, self.lock_height_to_content))
-        self.main_layout.addWidget(self.log_section)
-
-        self.log_area = QPlainTextEdit()
-        self.log_area.setReadOnly(True)
-        self.log_area.setPlaceholderText("Activity logs will display here...")
-        self.log_area.setFixedHeight(140)
-        self.log_section.content_layout.addWidget(self.log_area)
-
-        # 6. Action Buttons Bottom Layout
+        # 5. Action Buttons Bottom Layout
         action_layout = QVBoxLayout()
         action_layout.setSpacing(10)
         
@@ -2282,9 +2438,21 @@ class MainWindow(QMainWindow):
         self.open_folder_button.clicked.connect(self.open_output_folder)
         self.open_folder_button.setIcon(make_svg_icon("folder.svg", color="#F3F5F8", size=18))
         self.open_folder_button.setIconSize(QSize(18, 18))
-        
+
+        self.session_log_button = QPushButton(self.session_log_button_label())
+        self.session_log_button.setObjectName("sessionLogButton")
+        self.session_log_button.clicked.connect(self.show_session_log_dialog)
+        self.session_log_button.setIcon(make_svg_icon("file-text.svg", color=self.theme["button_secondary_text"], size=18))
+        self.session_log_button.setIconSize(QSize(18, 18))
+
+        secondary_action_row = QHBoxLayout()
+        secondary_action_row.setContentsMargins(0, 0, 0, 0)
+        secondary_action_row.setSpacing(8)
+        secondary_action_row.addWidget(self.session_log_button, 3)
+        secondary_action_row.addWidget(self.open_folder_button, 5)
+
         action_layout.addWidget(self.start_button)
-        action_layout.addWidget(self.open_folder_button)
+        action_layout.addLayout(secondary_action_row)
         action_layout.addSpacing(4)
 
         self.footer_logo_container = QWidget()
@@ -2609,7 +2777,9 @@ class MainWindow(QMainWindow):
         self.start_cooldown_timer.start(3000)
         self.refresh_control_states()
         self.set_start_button_state("preparing")
-        self.log_area.clear()
+        self.log_messages = []
+        if self.session_log_dialog is not None:
+            self.session_log_dialog.set_log_text("")
         self.append_info(f"Starting process for file: {input_file}")
 
         self.worker = Worker(input_file, max_size_mb, self.custom_output_dir)
