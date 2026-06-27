@@ -23,6 +23,8 @@ MediaSeg is a local macOS utility for splitting large media files into upload-re
 - MP4 uses a stream-copy split path without re-encoding
 - Official support: MP4, WEBM, MOV
 - Experimental support: M4A, MP3, WAV
+- GUI theme selection: System, Dark, Light, Neon Tokyo
+- GUI language selection: System, English, Japanese, Vietnamese
 
 ## Screenshots
 
